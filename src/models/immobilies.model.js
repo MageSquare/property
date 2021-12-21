@@ -3,7 +3,7 @@
 var dbConn = require('./../../config/db.config');
 //immobilies object create
 
-
+  
 var Immobilie = function(immobilie){
   this.openimmo_obid     			 = immobilie.openimmo_obid;
   this.objektkategorie      		 = immobilie.objektkategorie;
