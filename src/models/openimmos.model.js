@@ -3,7 +3,7 @@
 var dbConn = require('./../../config/db.config');
 
 //openimmos object create
-
+  
 
 var Openimmos = function(openimmos){
   this.anbieter_id     			    = openimmos.anbieter_id;
