@@ -15,7 +15,7 @@ propertyRoutes.route('/property').get(function (req, res){
         if (err){
             res.status(400).send("No Data found");
         }
-        else
+        else  
         {
               res.status(200).send(immobilie);
         }
