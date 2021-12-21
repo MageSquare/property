@@ -1,27 +1,17 @@
 var express = require('express');
-var app = express();
-const mysql=require('mysql');
-const propertyRoutes=require('./routes/property.route'); 
+var app = express();  
+const propertyRoutes=require('./src/routes/property.routes');   
+const bodyParser = require('body-parser');
+const con=require('./config/db.config');
 
-const con=mysql.createConnection({  
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "property"
-}); 
+app.use(bodyParser.urlencoded({ extended: true }))
 
-con.connect(function(err) {
-  if (err) throw err;
-  console.log("Connected!");
-});
-
+app.use(bodyParser.json())
 
 app.use('/api',propertyRoutes);
 
 
-
-
-var server = app.listen(8000, function () { 
+var server = app.listen(8000, function () {
    var host = server.address().address
    var port = server.address().port
 
