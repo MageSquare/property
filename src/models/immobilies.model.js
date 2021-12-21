@@ -95,5 +95,23 @@ Immobilie.getPropertyByObjectId = function(id,result){
 // Custom method to display property by object id end
 
 
+// Custom method to display all property start
+
+Immobilie.getAllProperty = function(curr_page,per_page,result){                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+ dbConn.query('select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+curr_page,function (err, res) {
+        
+      if(err){ 
+        result(null,err);
+      }  
+      else
+      {
+        result(null,res); 
+      }
+  });
+}
+
+// Custom method to display all property end
+
+
 module.exports= Immobilie;
 
