@@ -3,12 +3,12 @@ var app = express();
 const mysql=require('mysql');
 const propertyRoutes=require('./routes/property.route'); 
 
-const con=mysql.createConnection({
+const con=mysql.createConnection({  
   host: "localhost",
   user: "root",
   password: "",
   database: "property"
-});
+}); 
 
 con.connect(function(err) {
   if (err) throw err;
@@ -21,7 +21,7 @@ app.use('/api',propertyRoutes);
 
 
 
-var server = app.listen(8000, function () {
+var server = app.listen(8000, function () { 
    var host = server.address().address
    var port = server.address().port
 
