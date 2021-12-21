@@ -30,4 +30,25 @@ propertyRoutes.route('/property').get(function (req, res){
 
 // #####  Get one properties by id End  ####
 
+
+
+// Get All Properties Start
+
+propertyRoutes.route('/properties').get(function (req,res){
+
+  let curr_page=req.query.curr_page;
+  let per_page=req.query.per_page;
+      Immobilie.getAllProperty(curr_page,per_page,function (err,immobilie) {
+          if (err){
+              res.status(400).send("No Data found");
+          }
+          else
+          {
+                res.status(200).send(immobilie);
+          }
+      });
+});
+  
+// Get All Properties End
+
 module.exports = propertyRoutes;
