@@ -1,9 +1,5 @@
 'use strict';
-
-var dbConn = require('./../../config/db.config');
-
-//openimmos object create
-  
+const dbConn = require('../../config/db.config');
 
 var Openimmos = function(openimmos){
   this.anbieter_id     			    = openimmos.anbieter_id;
@@ -23,5 +19,4 @@ var Openimmos = function(openimmos){
   this.deleted_at    				    = new Date();
 };
 
-  
 module.exports= Openimmos;
