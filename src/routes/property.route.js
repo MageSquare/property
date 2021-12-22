@@ -2,7 +2,7 @@ const express = require('express');
 const propertyRoutes = express.Router();
 const mysql = require('mysql');
 const Immobilie = require('../models/immobilies.model');
-const dbConn = require('../config/db.config');
+const dbConn = require('../../config/db.config');
 const app = express();
 
 //Fetch Property By Id by Get Method

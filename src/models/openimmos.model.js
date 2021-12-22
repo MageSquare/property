@@ -1,6 +1,6 @@
 'use strict';
 
-const dbConn = require('../config/db.config');
+const dbConn = require('../../config/db.config');
 //openimmos object created
 
 

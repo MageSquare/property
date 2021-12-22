@@ -1,5 +1,5 @@
 'use strict';
-const dbConn = require('../config/db.config');
+const dbConn = require('../../config/db.config');
 //Profile object created
 
 var Profiles = function(profiles){

@@ -3,7 +3,7 @@ const userRoutes = express.Router();
 const mysql = require('mysql');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const dbConn = require('../config/db.config');
+const dbConn = require('../../config/db.config');
 const Profiles = require('../models/profiles.model');
 
 userRoutes.route('/get_my_created_property').get(function(req,res){
