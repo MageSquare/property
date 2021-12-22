@@ -233,7 +233,7 @@ var Immobilie = function(immobilie){
                               }
                               else
                               {
-                                result(null,res);
+                                result(null,obj_tmp);
                               }
 
                         }
