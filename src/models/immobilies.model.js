@@ -96,18 +96,33 @@ Immobilie.getPropertyByObjectId = function(id,result){
 
 
 // Custom method to display all property start
+Immobilie.getAllProperty = function(per_page,page,result){  
+  if(!per_page && !page){
+      dbConn.query('select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc',function (err, res) {
+        if(err){ 
+          result(null,err);
+        }  
+        else
+        {
+          console.log(res);
+          result(null,res); 
+        }
 
-Immobilie.getAllProperty = function(curr_page,per_page,result){                                                                                                                                                                                                                                                                                                                                                                                                                                                         
- dbConn.query('select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+curr_page,function (err, res) {
-        
-      if(err){ 
-        result(null,err);
-      }  
-      else
-      {
-        result(null,res); 
-      }
-  });
+      });
+  } 
+  else {
+       dbConn.query('select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+page,function (err, res) {
+          
+        if(err){ 
+          result(null,err);
+        }  
+        else
+        {
+          result(null,res); 
+        }
+    });
+  }                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
 }
 
 // Custom method to display all property end
