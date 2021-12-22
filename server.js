@@ -1,35 +1,22 @@
 const express = require('express'),
-mysql = require('mysql'),
-router = express.Router(),
 bodyParser = require('body-parser'),
-// var dbConn = require('./../../config/db.config'),
 propertyRoutes= require('./routes/property.route'),
-userRoutes=require('./routes/user.route'),
+userRoutes=require('./routes/user.route');
 
 app =express();
-app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-// app.use(cookieParser());
+app.use(bodyParser.json());
 
+// Routes For API
+  app.use('/api',propertyRoutes);
+  app.use('/api/user',userRoutes);
+// Routes For API
 
-app.use('/api',propertyRoutes);
-app.use('/api/user',userRoutes);
-
-// var con =mysql.createConnection({
-// 	 host: "localhost",
-//   	 user: "root",
-//   	 password: "",
-//   	 database:'property'
-// });
-
-// con.connect(function(err){
-// 	if(err) throw err;
-// 	console.log("connected!");
-// });
-
-const port = process.env.PORT || 8000;
-
-const server = app.listen(port, function(){
-  console.log('Listening on port ' + port);
-});
-
+// Listing on Port
+  const port = process.env.PORT || 8000;
+  const server = app.listen(port, function(){
+    var host = server.address().address;
+    var port = server.address().port;
+    console.log("App listening at %s:%s", host, port)
+  });
+// Listing on Port
