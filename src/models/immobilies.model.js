@@ -104,7 +104,7 @@ Immobilie.getAllProperty = function(per_page,page,result){
         }  
         else
         {
-          console.log(res);
+        
           result(null,res); 
         }
 

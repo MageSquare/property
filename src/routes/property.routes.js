@@ -43,7 +43,7 @@ propertyRoutes.route('/properties').get(function (req,res){
               res.status(400).send("No Data found");
           }
           else
-          {
+          {  
                 res.status(200).send(immobilie);
           }
       });
