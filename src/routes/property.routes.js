@@ -36,9 +36,9 @@ propertyRoutes.route('/property').get(function (req, res){
 
 propertyRoutes.route('/properties').get(function (req,res){
 
-  let curr_page=req.query.curr_page;
   let per_page=req.query.per_page;
-      Immobilie.getAllProperty(curr_page,per_page,function (err,immobilie) {
+  let page=req.query.page;
+      Immobilie.getAllProperty(per_page,page,function (err,immobilie) {
           if (err){
               res.status(400).send("No Data found");
           }
