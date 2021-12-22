@@ -3,8 +3,8 @@ mysql = require('mysql'),
 router = express.Router(),
 bodyParser = require('body-parser'),
 // var dbConn = require('./../../config/db.config'),
-propertyRoutes= require('./src/routes/property.route'),
-userRoutes=require('./src/routes/user.route'),
+propertyRoutes= require('./src/routes/property.routes'),
+userRoutes=require('./src/routes/user.routes'),
 
 app =express();
 app.use(bodyParser.json());
