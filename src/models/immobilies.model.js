@@ -229,7 +229,9 @@ var Immobilie = function(immobilie){
                           let y=JSON.parse(v);
                               let ver=y['user_defined_simplefield']['verkauft'];
                               if(ver==1){
-                                result(null,"Property Sold");
+                                var error = new Object();
+                                error['message'] = "Property Sold !";
+                                result(error,null);
                               }
                               else
                               {
@@ -256,18 +258,38 @@ var Immobilie = function(immobilie){
 
 
 // Custom method to display all property start
-Immobilie.getAllProperty = function(per_page,page,result){  
-  if(!per_page && !page)
-      var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc';
-    else    
-      var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+page;
-      dbConn.query(sql,function (err, res) {
-        if(err) 
-          result(null,err);
-        else
-          result(null,res);
-      });                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-}
+    Immobilie.getAllProperty = function(per_page,page,result){  
+      if(!per_page && !page)
+          var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc';
+        else{
+          var offset = (per_page * (page - 1));
+          var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+offset;
+          dbConn.query(sql,function (err, res) {
+            if(err) 
+              result(null,err);
+            else{
+               var total_count_q = "select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc";
+               dbConn.query(total_count_q,function (err,ress){
+                    var totalPage=0;
+                    if(!page && !page){
+                        totalPage = 0;
+                    }else{
+                        if(per_page != 0 ){
+                           totalPage= Math.ceil((ress.length)/per_page);
+                        }else{
+                            totalPage = 0;
+                        }
+                    }
+                  var data = new Object();
+                  data['data'] = res;
+                  data['page'] = page;
+                  data['last_page'] = totalPage;
+                  result(null,data);
+               });
+            }
+          }); 
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+    }
 // Custom method to display all property end
 
 module.exports = Immobilie;

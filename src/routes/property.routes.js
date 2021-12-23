@@ -10,7 +10,7 @@ const propertyRoutes = express.Router();
     {
           Immobilie.getPropertyByObjectId(req.query.id,function(err, immobilie) {
           if (err){
-              res.status(400).send("No Data found");
+              res.status(400).send(err);
           }
           else  
           {
