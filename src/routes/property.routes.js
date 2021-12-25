@@ -1,5 +1,7 @@
 const express=require('express');
 const Immobilie = require('../models/immobilies.model');
+const Profiles = require('../models/profiles.model');
+const Users = require('../models/users.model');
 const dbConn = require('../../config/db.config');
 const propertyRoutes = express.Router();
 
@@ -115,5 +117,58 @@ const propertyRoutes = express.Router();
   });
 // Get list of all verkauft properties
 
+// Register
+propertyRoutes.route('/register').post(function(req,res){
+
+    let firstname = req.body.vorname,
+    lastname = req.body.lastname,
+    email = req.body.email,
+    password = req.body.password,
+    confirm_password = req.body.c_password,
+    emailRegexp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
+    if(firstname == null || firstname =='' && lastname ==null || lastname ==''){
+        res.status(400).send("First Name and Last Name are required fields.");
+    }
+    else if(email==null || email =='' || emailRegexp.test(email)==false){
+        res.status(400).send("Please Enter Email Address With True Format (e.g. - example@example.com).");
+    }
+    else if(password == null || password == ''){
+        res.status(400).send("Please Enter Password");
+    }
+    else if(confirm_password == null || confirm_password == ''){
+
+        res.status(400).send("Please Enter Confirm Password");      
+    }
+    else if(password != confirm_password){
+
+        res.status(400).send("Please Enter Same Value As Per Password");
+    }
+    else{
+        Profiles.register(firstname,lastname,email,password,confirm_password,function(err, data) {  
+            if (err){
+                res.status(400).send(err);
+            }
+            else
+            {
+              if(data==false){
+                res.status(200).json({
+                  status:400,
+                  msg : "User already exist with this EmailID, please use another one!",
+                });
+              }
+              else{
+                 res.status(200).json({
+                    status:200,
+                    msg : "Registration has been done!!"
+                });
+              }
+            }
+
+          });
+    }
+
+});
+// Register
 
 module.exports = propertyRoutes;

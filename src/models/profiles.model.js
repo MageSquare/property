@@ -65,4 +65,62 @@ var Profiles = function(profiles){
 	}
 // Get Properties by login user
 
+// Register
+
+	Profiles.register = function(firstname,lastname,email,password,confirm_password,result){
+		
+		let name = firstname.concat(' ', lastname);
+		let mailId=JSON.stringify(email);
+		let username=JSON.stringify(name);
+		let userpassword=JSON.stringify(bcrypt.hashSync(password,salt));
+		let userconfirm_password=JSON.stringify(confirm_password);
+		let userfirstname=JSON.stringify(firstname);
+		let userlastname=JSON.stringify(lastname);
+
+	    var sql = "select * from profiles p where p.email = "+mailId+" and p.deleted_at is null";
+
+	    dbConn.query(sql, function (err, res) {
+	        if (err) {
+	        	let error = new Object();
+	        	error['message']='Something went wrong!!'
+	            result(error, null);
+	        } else {
+	        	console.log('data',res);
+	        	let new_user;
+	        	if(res==[] || res==null || res==''){
+			       	new_user = true;
+	        		var sql = "Insert into Users (name,password,email,role) VALUES("+username+","+userpassword+","+mailId+",'admin')";
+	        		dbConn.query(sql, function(err,res){
+
+	        			if(err){
+	        				let error = new Object();
+	        				error['message']='Something went wrong!!!'
+	            			result(error, null);
+	        			}
+	        			else{
+	        				console.log('124',res);
+	        			    var sql = "Insert into Profiles (vorname,lastname,email) VALUES("+userfirstname+","+userlastname+","+mailId+")";
+	        			    dbConn.query(sql,function(err,data){
+	        			    	if(err){
+	        			    		let error = new Object();
+	        						error['message']='Something went wrong!!!'
+	            					result(error, null);
+	        			    	}
+	        			    	else{
+			        				result(null, new_user);
+	        			    	}
+	        			    });
+	        			}
+	        		});
+	        	}
+	        	else{
+	        		new_user = false;
+	        		result(null, new_user);
+	        	}
+	        }
+	    });
+	}
+
+// Register
+
 module.exports = Profiles;
