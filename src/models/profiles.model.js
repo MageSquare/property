@@ -56,7 +56,6 @@ var Profiles = function(profiles){
 	                if (err) {
 	                	result(null,err);
 	                } else {
-	                	console.log(data);
 	                	result(null,data);
 	                }
 	            });
@@ -85,7 +84,6 @@ var Profiles = function(profiles){
 	        	error['message']='Something went wrong!!'
 	            result(error, null);
 	        } else {
-	        	console.log('data',res);
 	        	let new_user;
 	        	if(res==[] || res==null || res==''){
 			       	new_user = true;
@@ -98,7 +96,6 @@ var Profiles = function(profiles){
 	            			result(error, null);
 	        			}
 	        			else{
-	        				console.log('124',res);
 	        			    var sql = "Insert into Profiles (vorname,lastname,email) VALUES("+userfirstname+","+userlastname+","+mailId+")";
 	        			    dbConn.query(sql,function(err,data){
 	        			    	if(err){
