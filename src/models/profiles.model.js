@@ -1,7 +1,8 @@
 'use strict';
 const dbConn = require('../../config/db.config');
-var bcrypt = require('bcrypt');
-var salt = 10;
+const bcrypt = require('bcrypt');
+const salt = 10;
+const jwt = require('jsonwebtoken');
 
 var Profiles = function(profiles){
 	this.user_id				= profiles.user_id;
@@ -81,38 +82,41 @@ var Profiles = function(profiles){
 	    dbConn.query(sql, function (err, res) {
 	        if (err) {
 	        	let error = new Object();
-	        	error['message']='Something went wrong!!'
+	        	error['message']='Data Not Found!';
 	            result(error, null);
 	        } else {
-	        	let new_user;
 	        	if(res==[] || res==null || res==''){
-			       	new_user = true;
-	        		var sql = "Insert into Users (name,password,email,role) VALUES("+username+","+userpassword+","+mailId+",'admin')";
+	        		var sql = "Insert into users (name,password,email,role) VALUES("+username+","+userpassword+","+mailId+",'admin')";
 	        		dbConn.query(sql, function(err,res){
-
 	        			if(err){
 	        				let error = new Object();
-	        				error['message']='Something went wrong!!!'
+	        				error['message']=err;
 	            			result(error, null);
 	        			}
 	        			else{
-	        			    var sql = "Insert into Profiles (vorname,lastname,email) VALUES("+userfirstname+","+userlastname+","+mailId+")";
+	        				var userId = res.insertId;
+	        			    var sql = "Insert into profiles (vorname,lastname,email) VALUES("+userfirstname+","+userlastname+","+mailId+")";
 	        			    dbConn.query(sql,function(err,data){
 	        			    	if(err){
 	        			    		let error = new Object();
-	        						error['message']='Something went wrong!!!'
+	        						error['message']='Something went wrong!, Can Not Insert Data Into Profiles.'
 	            					result(error, null);
 	        			    	}
 	        			    	else{
-			        				result(null, new_user);
+	        			    		var profileId = data.insertId;
+	        			    		const token = jwt.sign({userId: userId,profileId:profileId}, "124ds#@$#@%AWsdcasjkoiashf98A^S!!@$#554d234fcaASdDAs", { expiresIn: 30*60 }); 
+	        			    		let info = new Object();
+	        			    		info['accessToken'] = token;
+			        				result(null, info);
 	        			    	}
 	        			    });
 	        			}
 	        		});
 	        	}
 	        	else{
-	        		new_user = false;
-	        		result(null, new_user);
+	        		let error = new Object();
+					error['message']='Upps! you are already register.'
+					result(error, null);
 	        	}
 	        }
 	    });
