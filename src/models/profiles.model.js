@@ -1,5 +1,7 @@
 'use strict';
 const dbConn = require('../../config/db.config');
+var bcrypt = require('bcrypt');
+var salt = 10;
 
 var Profiles = function(profiles){
 	this.user_id				= profiles.user_id;
