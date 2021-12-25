@@ -65,14 +65,12 @@ var Profiles = function(profiles){
 // Get Properties by login user
 
 // Register
-
-	Profiles.register = function(firstname,lastname,email,password,confirm_password,result){
+	Profiles.register = function(firstname,lastname,email,password,result){
 		
 		let name = firstname.concat(' ', lastname);
 		let mailId=JSON.stringify(email);
 		let username=JSON.stringify(name);
 		let userpassword=JSON.stringify(bcrypt.hashSync(password,salt));
-		let userconfirm_password=JSON.stringify(confirm_password);
 		let userfirstname=JSON.stringify(firstname);
 		let userlastname=JSON.stringify(lastname);
 
@@ -117,7 +115,6 @@ var Profiles = function(profiles){
 	        }
 	    });
 	}
-
 // Register
 
 module.exports = Profiles;
