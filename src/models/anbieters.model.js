@@ -1,8 +1,5 @@
 'use strict';
-
-const dbConn = require('../../config/db.config');
-//anbieters object created
-
+var dbConn = require('../../config/db.config');
  
 var Anbieters = function(anbieters){
   this.immobilie_id     			    = anbieters.immobilie_id;
@@ -19,6 +16,5 @@ var Anbieters = function(anbieters){
   this.updated_at   				      = new Date();
   this.deleted_at    				      = new Date();
 };
-
 
 module.exports= Anbieters;
