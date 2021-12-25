@@ -63,7 +63,6 @@ const propertyRoutes = express.Router();
 
 // Get list of all properties by folder by POST method
   propertyRoutes.route('/properties').post(function(req,res){
-      console.log(req);
       let provider_id = req.query.value;
       let pageSize = req.query.per_page;
       let curr_page = req.query.curr_page;

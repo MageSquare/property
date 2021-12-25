@@ -67,16 +67,13 @@ var Immobilie = function(immobilie){
                         providerids.push('0'+pid.provider_id);   
                     }
                     prov_ids=providerids;
-                    console.log(prov_ids);
             }
         	var sql ='select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc limit '+per_page+' offset '+curr_page+'';
-    	    console.log("78");
             dbConn.query(sql, function (err, data) {
     	        if (err) {
                     // console.log("err",err);
     	        	result(null, err);
     	        } else {
-                    console.log('data',data);
     	        	result(null, data);
     	        }
     	    });
@@ -94,7 +91,6 @@ var Immobilie = function(immobilie){
                     let top_directory;
                     let directory;
                     let immo_id;
-                    console.log(data);
                     for (var i = 0; i < data.length; i++) {
                         top_directory=data[i].top_directory;
                         directory=data[i].directory;
@@ -191,7 +187,6 @@ var Immobilie = function(immobilie){
                 if (err) {
                     result(null,err);
                 } else {
-                    console.log(data);
                     result(null,data);
                 }
             });
