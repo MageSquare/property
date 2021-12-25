@@ -141,7 +141,7 @@ propertyRoutes.route('/register').post(function(req,res){
             else
             {
               if(data==false){
-                res.status(200).json({
+                res.status(400).json({
                   status:400,
                   msg : "User already exist with this EmailID, please use another one!",
                 });
