@@ -20,4 +20,9 @@ const userRoutes = express.Router();
     });
 // get Property created by user
 
+// get current user login detail 
+    userRoutes.route('/get').get(function(req,res){
+        console.log("user");
+    });
+// get current user login detail 
 module.exports = userRoutes;

@@ -1,8 +1,8 @@
 'use strict';
-const dbConn = require('../../config/db.config');
-const bcrypt = require('bcrypt');
-const salt = 10;
-const jwt = require('jsonwebtoken');
+const 	bcrypt = require('bcrypt'),
+		dbConn = require('../../config/db.config'),
+		salt = 10,
+		jwt = require('jsonwebtoken');
 
 var Profiles = function(profiles){
 	this.user_id				= profiles.user_id;
@@ -68,7 +68,7 @@ var Profiles = function(profiles){
 // Get Properties by login user
 
 // Register
-	Profiles.register = function(firstname,lastname,email,password,result){
+	Profiles.register = function(firstname,lastname,email,password,secretKey,expiresIn,result){
 		
 		let name = firstname.concat(' ', lastname);
 		let mailId=JSON.stringify(email);
@@ -104,7 +104,7 @@ var Profiles = function(profiles){
 	        			    	}
 	        			    	else{
 	        			    		var profileId = data.insertId;
-	        			    		const token = jwt.sign({userId: userId,profileId:profileId}, "124ds#@$#@%AWsdcasjkoiashf98A^S!!@$#554d234fcaASdDAs", { expiresIn: 30*60 }); 
+	        			    		const token = jwt.sign({userId: userId,profileId:profileId},secretKey, { expiresIn: expiresIn }); 
 	        			    		let info = new Object();
 	        			    		info['accessToken'] = token;
 			        				result(null, info);

@@ -3,9 +3,9 @@ const mysql = require('mysql');
 
 const dbConn = mysql.createConnection({
   host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'property'
+  user     : 'ngminstaa',
+  password : '22115258',
+  database : 'propertymanagement'
 });
 dbConn.connect(function(err) {
   if (err) throw err;
