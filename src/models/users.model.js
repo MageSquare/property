@@ -15,7 +15,7 @@ var Users = function(users){
 
 // get current user
 	Users.getUser = function(id,result){
-		var sql = "SELECT * FROM users LEFT JOIN profiles ON profiles.user_id = users.id WHERE users.id = "+id;
+		var sql = "SELECT * FROM providers where id = "+id;
 		 dbConn.query(sql, function (err, res) {
 	        if (err) {
 	        	let error = new Object();

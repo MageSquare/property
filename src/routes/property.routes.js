@@ -134,7 +134,7 @@ propertyRoutes.route('/register').post(function(req,res){
         res.status(400).send("Please Enter Password");
     }
     else{
-        Profiles.register(firstname,lastname,email,password,req.app.get('secretKey'),req.app.get('expiresIn'),function(err, data) {  
+        Profiles.register(firstname,lastname,email,password,function(err, data) {  
             if (err){
                 res.status(400).send(err);
             }

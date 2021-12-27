@@ -4,6 +4,9 @@ const 	bcrypt = require('bcrypt'),
 		salt = 10,
 		jwt = require('jsonwebtoken');
 
+require('dotenv').config();
+
+
 var Profiles = function(profiles){
 	this.user_id				= profiles.user_id;
 	this.provider_id			= profiles.provider_id;
@@ -68,7 +71,7 @@ var Profiles = function(profiles){
 // Get Properties by login user
 
 // Register
-	Profiles.register = function(firstname,lastname,email,password,secretKey,expiresIn,result){
+	Profiles.register = function(firstname,lastname,email,password,result){
 		
 		let name = firstname.concat(' ', lastname);
 		let mailId=JSON.stringify(email);
@@ -104,7 +107,7 @@ var Profiles = function(profiles){
 	        			    	}
 	        			    	else{
 	        			    		var profileId = data.insertId;
-	        			    		const token = jwt.sign({userId: userId,profileId:profileId},secretKey, { expiresIn: expiresIn }); 
+	        			    		const token = jwt.sign({userId: userId,profileId:profileId},process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIREIN }); 
 	        			    		let info = new Object();
 	        			    		info['accessToken'] = token;
 			        				result(null, info);
