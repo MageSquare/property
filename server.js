@@ -10,7 +10,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
 app.set('secretKey', '124ds#@$#@%AWsdcasjkoiashf98A^S!!@$#554d234fcaASdDAs');
-app.set('expiresIn',3*60);
+app.set('expiresIn',30*60);
 
 // Routes For API
   app.use('/api',propertyRoutes);
@@ -38,9 +38,9 @@ function validateRequest(req, res, next) {
           if (err) {
             res.status(403).json({msg: "Unauthorized"});
           }else{
-            console.log(decoded);
-            req.body.userId = decoded.userId;
-            req.body.profileId = decoded.profileId;
+            // get value of user whicha are set when create token
+              req.body.userId = decoded.userId;
+            // get value of user whicha are set when create token
             next();
           }
         });

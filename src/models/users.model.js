@@ -13,4 +13,19 @@ var Users = function(users){
 	this.deleted_at				= new Date();
 }
 
+// get current user
+	Users.getUser = function(id,result){
+		var sql = "SELECT * FROM users LEFT JOIN profiles ON profiles.user_id = users.id WHERE users.id = "+id;
+		 dbConn.query(sql, function (err, res) {
+	        if (err) {
+	        	let error = new Object();
+	        	error['message']='Data Not Found!';
+	            result(error, null);
+	        } else {
+	        	result(null,res[0]);
+	        }
+	    });
+	};
+// get current user
+
 module.exports = Users;

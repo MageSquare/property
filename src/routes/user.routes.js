@@ -1,5 +1,6 @@
 const express = require('express');
 const Profiles = require('../models/profiles.model');
+const Users = require('../models/users.model');
 const userRoutes = express.Router();
 
 // get Property created by user
@@ -22,7 +23,16 @@ const userRoutes = express.Router();
 
 // get current user login detail 
     userRoutes.route('/get').get(function(req,res){
-        console.log("user");
+        var id = req.body.userId;
+        Users.getUser(id,function(err,data){
+            if (err){
+                res.status(400).send(err);
+            }
+            else
+            {
+                res.status(200).send(data);
+            }
+        });
     });
 // get current user login detail 
 module.exports = userRoutes;
