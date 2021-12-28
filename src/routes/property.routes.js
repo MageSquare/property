@@ -1,9 +1,9 @@
 const express=require('express');
 const Immobilie = require('../models/immobilies.model');
-const Profiles = require('../models/profiles.model');
-const Users = require('../models/users.model');
+const Providers = require('../models/providers.model');
 const dbConn = require('../../config/db.config');
 const propertyRoutes = express.Router();
+const { body,check, validationResult } = require('express-validator');
 
 // #### Get one properties by id Start #####
   propertyRoutes.route('/property').get(function (req, res){
@@ -117,36 +117,63 @@ const propertyRoutes = express.Router();
 // Get list of all verkauft properties
 
 // Register
-propertyRoutes.route('/register').post(function(req,res){
-    let firstname = req.body.firstname,
-    lastname = req.body.lastname,
-    email = req.body.email,
-    password = req.body.password,
-    emailRegexp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  propertyRoutes.route('/register').post(function(req,res){
+      let firstname = req.body.firstname,
+      lastname = req.body.lastname,
+      email = req.body.email,
+      password = req.body.password,
+      emailRegexp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-    if(firstname == null || firstname =='' && lastname ==null || lastname ==''){
-        res.status(400).send("First Name and Last Name are required fields.");
-    }
-    else if(email==null || email =='' || emailRegexp.test(email)==false){
-        res.status(400).send("Please Enter Email Address With True Format (e.g. - example@example.com).");
-    }
-    else if(password == null || password == ''){
-        res.status(400).send("Please Enter Password");
-    }
-    else{
-        Profiles.register(firstname,lastname,email,password,function(err, data) {  
-            if (err){
-                res.status(400).send(err);
-            }
-            else
-            {
-               res.status(200).json(data);
-            }
+      if(firstname == null || firstname =='' && lastname ==null || lastname ==''){
+          res.status(400).send("First Name and Last Name are required fields.");
+      }
+      else if(email==null || email =='' || emailRegexp.test(email)==false){
+          res.status(400).send("Please Enter Email Address With True Format (e.g. - example@example.com).");
+      }
+      else if(password == null || password == ''){
+          res.status(400).send("Please Enter Password");
+      }
+      else{
+          Immobilie.register(firstname,lastname,email,password,function(err, data) {  
+              if (err){
+                  res.status(400).send(err);
+              }
+              else
+              {
+                 res.status(200).json(data);
+              }
 
-          });
-    }
+            });
+      }
 
-});
+  });
 // register
+
+// Login
+  propertyRoutes.route('/login'
+  ).post([
+    // body('email', 'Enter Valid Email Address','Email is required !').notEmpty().isEmail(),
+    // body('password','Password is required !').notEmpty(),
+    ],async function(req,res){
+       await check('email',"Email is required").notEmpty().run(req);
+       await check('password',"PAssword is required").notEmpty().run(req);
+       await check('email',"Enter valid email Address").isEmail().run(req);
+       const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            res.status(400).send(errors);
+        }
+        else {
+            Providers.login(req.body.email,req.body.password,function(err,data){
+              if (err){
+                  res.status(400).send(err);
+              }
+              else
+              {
+                 res.status(200).json(data);
+              }
+            });
+        }
+  });
+// Login
 
 module.exports = propertyRoutes;
