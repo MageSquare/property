@@ -25,7 +25,7 @@ const { body,check, validationResult } = require('express-validator');
       res.status(400).send("Invalid Id");
     }
   });
-// #####  Get one properties by id End  ####
+// #####  Get one properties by id End  ####  #
 
 
 // Get All Properties Start
