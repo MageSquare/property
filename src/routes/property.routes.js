@@ -1,9 +1,9 @@
 const express=require('express');
 const Immobilie = require('../models/immobilies.model');
-const Profiles = require('../models/profiles.model');
-const Users = require('../models/users.model');
+const Providers = require('../models/providers.model');
 const dbConn = require('../../config/db.config');
 const propertyRoutes = express.Router();
+const { body,check, validationResult } = require('express-validator');
 
 // #### Get one properties by id Start #####
   propertyRoutes.route('/property').get(function (req, res){
@@ -117,47 +117,98 @@ const propertyRoutes = express.Router();
 // Get list of all verkauft properties
 
 // Register
-propertyRoutes.route('/register').post(function(req,res){
-    let firstname = req.body.firstname,
-    lastname = req.body.lastname,
-    email = req.body.email,
-    password = req.body.password,
-    emailRegexp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  propertyRoutes.route('/register').post(async function(req,res){
 
-    if(firstname == null || firstname =='' && lastname ==null || lastname ==''){
-        res.status(400).send("First Name and Last Name are required fields.");
-    }
-    else if(email==null || email =='' || emailRegexp.test(email)==false){
-        res.status(400).send("Please Enter Email Address With True Format (e.g. - example@example.com).");
-    }
-    else if(password == null || password == ''){
-        res.status(400).send("Please Enter Password");
-    }
-    else{
-        Profiles.register(firstname,lastname,email,password,function(err, data) {  
+      await check('email',"Email is required").notEmpty().run(req);
+      await check('password',"Password is required").notEmpty().run(req);
+      await check('email',"Enter valid email Address").isEmail().run(req);
+      await check('firstname',"Firstname is required").notEmpty().run(req);
+      await check('lastname',"Lastname is required").notEmpty().run(req);
+      await check('password').isLength({ min: 8 }).withMessage('Password must be at least 8 chars long').run(req);
+      await check('password').matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d@$.!%*#?&]/).withMessage('Please enter a password at least 8 character and contain At least one uppercase.At least one lower case.At least one special character.').run(req);
+
+
+     const errors = validationResult(req);
+
+     let firstname = req.body.firstname,
+      lastname = req.body.lastname,
+      email = req.body.email,
+      password = req.body.password,
+      phone = req.body.phone,
+      firma = req.body.firma,
+      provider_dir = req.body.provider_dir,
+      state = req.body.state,
+      city = req.body.city,
+      pic = req.body.pic;
+
+      let providers = new Providers(req.body);
+
+      if(phone == null || phone == ''){
+
+          providers.phone = null;
+      }
+      else{
+          providers.phone = phone;
+      }
+
+      if(firma == null || firma == ''){
+        
+          providers.firma = null;
+      }
+      else{
+          providers.firma = firma;
+      }
+
+      if(state == null || state == ''){
+        
+          providers.state = null;
+      }
+      else{
+          providers.state = state;
+      }
+
+      if(city == null || city == ''){
+        
+          providers.city = null;
+      }
+      else{
+          providers.city = city;
+      }
+
+      if(state == null || state == ''){
+        
+          providers.pic = null;
+      }
+      else{
+          providers.pic = pic;
+      }
+
+      providers.fullname = firstname.concat(' ', lastname);
+      providers.provider_dir = null;
+      providers.role = 0;
+
+      if (!errors.isEmpty()) {
+              res.status(400).send(errors);
+          }
+
+      else
+      {
+
+          Providers.register(providers,function(err, data) {  
             if (err){
                 res.status(400).send(err);
             }
             else
             {
-              if(data==false){
-                res.status(400).json({
-                  status:400,
-                  msg : "User already exist with this EmailID, please use another one!",
-                });
-              }
-              else{
-                 res.status(200).json({
-                    status:200,
-                    msg : "Registration has been done!!"
-                });
-              }
+               res.status(200).json(data);
             }
 
           });
-    }
 
-});
+      }
+      
+
+  });
 // register
 
 module.exports = propertyRoutes;

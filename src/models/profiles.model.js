@@ -27,96 +27,96 @@ var Profiles = function(profiles){
 
 
 // Get Properties by login user
-	Profiles.userProperties = function(currentUser,per_page,curr_page,result){
-	    var sql = "select * from profiles p where user_id = "+currentUser+" and p.deleted_at is null"
-	    dbConn.query(sql,function(err,data){
-	        if(err){
-	        	result(null,err);
-	        }
-	        else{
-		        let pid;
-	            for (var i = 0; i < data.length; i++) {
-	                let provider_id = data[i].provider_id;
-		            if(provider_id){ 
-		                if(provider_id < 10){
-		                    pid=('0000'+provider_id);
-		                }
-		                else if(provider_id < 100){
-		                    pid=('000'+provider_id);   
-		                }
-		                else if(provider_id < 1000){
-		                    pid=('00'+provider_id);   
-		                }
-		                else if(provider_id < 10000){
-		                    pid=('0'+provider_id);   
-		                }
-		            }
-	            }
-	                var sql="select * from immobilies i where json_unquote(json_extract(`verwaltung_techn`, '$.aktion.aktionart')) = 'CHANGE' and top_directory = "+pid+" limit "+per_page+" offset "+curr_page+"";
+	// Profiles.userProperties = function(currentUser,per_page,curr_page,result){
+	//     var sql = "select * from profiles p where user_id = "+currentUser+" and p.deleted_at is null"
+	//     dbConn.query(sql,function(err,data){
+	//         if(err){
+	//         	result(null,err);
+	//         }
+	//         else{
+	// 	        let pid;
+	//             for (var i = 0; i < data.length; i++) {
+	//                 let provider_id = data[i].provider_id;
+	// 	            if(provider_id){ 
+	// 	                if(provider_id < 10){
+	// 	                    pid=('0000'+provider_id);
+	// 	                }
+	// 	                else if(provider_id < 100){
+	// 	                    pid=('000'+provider_id);   
+	// 	                }
+	// 	                else if(provider_id < 1000){
+	// 	                    pid=('00'+provider_id);   
+	// 	                }
+	// 	                else if(provider_id < 10000){
+	// 	                    pid=('0'+provider_id);   
+	// 	                }
+	// 	            }
+	//             }
+	//                 var sql="select * from immobilies i where json_unquote(json_extract(`verwaltung_techn`, '$.aktion.aktionart')) = 'CHANGE' and top_directory = "+pid+" limit "+per_page+" offset "+curr_page+"";
 	                
-	                dbConn.query(sql, function (err, data) {
-	                if (err) {
-	                	result(null,err);
-	                } else {
-	                	result(null,data);
-	                }
-	            });
-	        }
-	    });
-	}
+	//                 dbConn.query(sql, function (err, data) {
+	//                 if (err) {
+	//                 	result(null,err);
+	//                 } else {
+	//                 	result(null,data);
+	//                 }
+	//             });
+	//         }
+	//     });
+	// }
 // Get Properties by login user
 
 // Register
-	Profiles.register = function(firstname,lastname,email,password,result){
+	// Profiles.register = function(firstname,lastname,email,password,result){
 		
-		let name = firstname.concat(' ', lastname);
-		let mailId=JSON.stringify(email);
-		let username=JSON.stringify(name);
-		let userpassword=JSON.stringify(bcrypt.hashSync(password,salt));
-		let userfirstname=JSON.stringify(firstname);
-		let userlastname=JSON.stringify(lastname);
+	// 	let name = firstname.concat(' ', lastname);
+	// 	let mailId=JSON.stringify(email);
+	// 	let username=JSON.stringify(name);
+	// 	let userpassword=JSON.stringify(bcrypt.hashSync(password,salt));
+	// 	let userfirstname=JSON.stringify(firstname);
+	// 	let userlastname=JSON.stringify(lastname);
 
-	    var sql = "select * from profiles p where p.email = "+mailId+" and p.deleted_at is null";
+	//     var sql = "select * from profiles p where p.email = "+mailId+" and p.deleted_at is null";
 
-	    dbConn.query(sql, function (err, res) {
-	        if (err) {
-	        	let error = new Object();
-	        	error['message']='Something went wrong!!'
-	            result(error, null);
-	        } else {
-	        	let new_user;
-	        	if(res==[] || res==null || res==''){
-			       	new_user = true;
-	        		var sql = "Insert into Users (name,password,email,role) VALUES("+username+","+userpassword+","+mailId+",'admin')";
-	        		dbConn.query(sql, function(err,res){
+	//     dbConn.query(sql, function (err, res) {
+	//         if (err) {
+	//         	let error = new Object();
+	//         	error['message']='Something went wrong!!'
+	//             result(error, null);
+	//         } else {
+	//         	let new_user;
+	//         	if(res==[] || res==null || res==''){
+	// 		       	new_user = true;
+	//         		var sql = "Insert into Users (name,password,email,role) VALUES("+username+","+userpassword+","+mailId+",'admin')";
+	//         		dbConn.query(sql, function(err,res){
 
-	        			if(err){
-	        				let error = new Object();
-	        				error['message']='Something went wrong!!!'
-	            			result(error, null);
-	        			}
-	        			else{
-	        			    var sql = "Insert into Profiles (vorname,lastname,email) VALUES("+userfirstname+","+userlastname+","+mailId+")";
-	        			    dbConn.query(sql,function(err,data){
-	        			    	if(err){
-	        			    		let error = new Object();
-	        						error['message']='Something went wrong!!!'
-	            					result(error, null);
-	        			    	}
-	        			    	else{
-			        				result(null, new_user);
-	        			    	}
-	        			    });
-	        			}
-	        		});
-	        	}
-	        	else{
-	        		new_user = false;
-	        		result(null, new_user);
-	        	}
-	        }
-	    });
-	}
+	//         			if(err){
+	//         				let error = new Object();
+	//         				error['message']='Something went wrong!!!'
+	//             			result(error, null);
+	//         			}
+	//         			else{
+	//         			    var sql = "Insert into Profiles (vorname,lastname,email) VALUES("+userfirstname+","+userlastname+","+mailId+")";
+	//         			    dbConn.query(sql,function(err,data){
+	//         			    	if(err){
+	//         			    		let error = new Object();
+	//         						error['message']='Something went wrong!!!'
+	//             					result(error, null);
+	//         			    	}
+	//         			    	else{
+	// 		        				result(null, new_user);
+	//         			    	}
+	//         			    });
+	//         			}
+	//         		});
+	//         	}
+	//         	else{
+	//         		new_user = false;
+	//         		result(null, new_user);
+	//         	}
+	//         }
+	//     });
+	// }
 // Register
 
 module.exports = Profiles;
