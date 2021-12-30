@@ -106,4 +106,125 @@ this.updated_at 		=  new Date();
 	}
 // Register
 
+// Forget Password API
+	Providers.forgetPassword = function(origin_server,url,receiver_email,result){
+
+		let rec_mail=receiver_email;
+		let mailId=JSON.stringify(receiver_email);
+	    var sql = "select * from providers p where p.email = "+mailId+" ";
+
+	    dbConn.query(sql,function(err,res){
+
+		     if(err){
+		     	let error = new Object();
+	        	error['message']='Sorry! your account is not existing in our application.';
+	            result(error, null);
+		     }
+		     else{
+			     	if(res.length>0){
+
+			     		let receiver_name;
+			     		let rec_id;
+
+			   			for (var i = 0; i < res.length; i++) {
+			   				let name = res[i].name;
+			   				receiver_name=name;
+			   				let id = res[i].id;
+			   				rec_id = id;
+			   			}
+
+			   			var origin= origin_server;
+			   			let baseUrl=url;
+						const token = jwt.sign({id: [rec_id,new Date()]}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIREIN });
+			   			var resetUrl = 'http://'+origin+baseUrl+'/reset_password?token='+token;
+
+			   			let mail_send = mailSending(resetUrl,rec_id,rec_mail,receiver_name);
+			   			
+			   			if(mail_send){
+			   				result(null,"Email has been send");
+			   			}
+			   			else{
+			   				result(null,"Sorry! Not Able To Send Email.");
+			   			}
+			     	}
+			     	else{
+			     		let error = new Object();
+		        		error['message']='The email is not existing in our application!';
+		            	result(error, null);
+			     	}
+		     }
+	    });
+
+	}
+// Forget Password API
+
+// Reset Password
+	Providers.resetPassword = function(id,new_pswd,result){
+
+		let uid=id;
+		let new_password = JSON.stringify(bcrypt.hashSync(new_pswd,salt));
+	    var sql = "select * from providers u where id = "+uid+" ";
+
+	    dbConn.query(sql,function(err,res){
+
+		     if(err){
+		     	let error = new Object();
+	        	error['message']="Oops! Something Went Wrong.";
+	            result(error, null);
+		     }
+		     else{
+		     	if(res.length>0){
+		     		var sql = "update providers SET password ="+new_password+" where id="+uid+" ";
+		     		dbConn.query(sql, function(err,res){
+		     			if(err){
+		     				let error = new Object();
+	        				error['message']='Not Able To Update Password';
+	           				result(error, null);
+		     			}
+		     			else{
+		     				result(null, res);
+		     			}
+		     		});
+		     	}
+		     	else{
+		     		let error = new Object();
+	        		error['message']='The email Id is not existing in our application!';
+	            	result(error, null);
+		     	}
+		     	
+		     }
+	    });
+
+	}
+// Reset Password
+
+
+// ###################################### Functions #####################################
+
+
+// Send mail to USer For forgot password
+   async function mailSending(resetUrl,rec_id,receiver_email,receiver_name) {
+   			let rc_mail = receiver_email;
+   			let url = JSON.stringify(resetUrl);
+
+			return new Promise((resolve,reject)=>{
+				// Set data for customer
+		      var receiver_email = {
+		          to:rc_mail,
+		          subject: "You are about to reset your password.",
+		          sender: "admin",
+		          html:'<p>Click <a href= ' + url + '>here</a> to reset your password</p>'
+		      };
+			      // send mail to user
+			      transporter.sendMail(receiver_email, function (error, response) {
+			          if (error) {
+		                return 0;
+			          } else {
+			          	resolve(1);
+		          	  }
+			      });
+	    });
+   }
+// Send mail to USer For forgot password
+
 module.exports = Providers;
