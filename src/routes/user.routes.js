@@ -20,4 +20,19 @@ const userRoutes = express.Router();
     });
 // get Property created by user
 
+// get current user login detail 
+    userRoutes.route('/get').get(function(req,res){
+        var id = req.body.userId;
+        Providers.getUser(id,function(err,data){
+            if (err){
+                res.status(400).send(err);
+            }
+            else
+            {
+                res.status(200).send(data);
+            }
+        });
+    });
+// get current user login detail 
+
 module.exports = userRoutes;

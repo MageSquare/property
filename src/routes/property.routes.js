@@ -211,4 +211,96 @@ const { body,check, validationResult } = require('express-validator');
   });
 // register
 
+// Login
+  propertyRoutes.route('/login'
+  ).post([
+    // body('email', 'Enter Valid Email Address','Email is required !').notEmpty().isEmail(),
+    // body('password','Password is required !').notEmpty(),
+    ],async function(req,res){
+       await check('email',"Email is required").notEmpty().run(req);
+       await check('password',"PAssword is required").notEmpty().run(req);
+       await check('email',"Enter valid email Address").isEmail().run(req);
+       const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            res.status(400).send(errors);
+        }
+        else {
+            Providers.login(req.body.email,req.body.password,function(err,data){
+              if (err){
+                  res.status(400).send(err);
+              }
+              else
+              {
+                 res.status(200).json(data);
+              }
+            });
+        }
+  });
+// Login
+
+// Forgot Password
+ propertyRoutes.route('/forget_password').post(function(req,res){
+   
+   let origin_server = req.headers.host;
+   let url = req.baseUrl;
+   let receiver_email = req.body.email;
+
+    Providers.forgetPassword(origin_server,url,receiver_email,function(err, data) {    
+
+        if (err){
+            res.status(400).send(err);
+        }
+        else
+        {
+          res.status(200).json({message : data});
+        }
+    });
+
+});
+// Forgot Password
+
+// Reset Password
+ propertyRoutes.route('/reset_password').post(async function(req,res){
+
+             await check('password').isLength({ min: 8 }).withMessage('Password must be at least 8 chars long').run(req);
+             await check('password').matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d@$.!%*#?&]/).withMessage('Please enter a password at least 8 character and contain At least one uppercase.At least one lower case.At least one special character.').run(req);
+            
+              const errors = validationResult(req);
+               
+              if (!errors.isEmpty()) {
+                    res.status(400).send(errors);
+              }
+
+              else{
+
+                let token = req.query.token;
+                jwt.verify(token, process.env.JWT_SECRET, function(err, decoded){
+
+                     if(err){
+
+                         res.status(400).send('Sorry! Your Token May Expired.');
+                     }
+                     else{
+
+                         let user_id = req.body.id;
+                         let new_pswd = req.body.password;
+                         Providers.resetPassword(user_id,new_pswd, function(err, data) {   
+
+                              if (err){
+                                res.status(400).send(err);
+                              }
+                              else{
+                                res.status(200).send({message:'Your Password Has Been Reset Now.'});
+                              }
+
+                          }); 
+                     }
+
+                });
+
+              }
+
+});
+// Reset Password
+
 module.exports = propertyRoutes;
