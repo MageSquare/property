@@ -60,7 +60,6 @@ const { body,check, validationResult } = require('express-validator');
   });
 //Fetch Property By Id by Get Method
 
-
 // Get list of all properties by folder by POST method
   propertyRoutes.route('/properties').post(function(req,res){
       let provider_id = req.query.value;
@@ -79,7 +78,6 @@ const { body,check, validationResult } = require('express-validator');
 
   });
 // Get list of all properties by folder by POST method
-
 
 // Delete created property
   propertyRoutes.route('/delete_my_created_property').delete(function(req,res){
@@ -175,5 +173,23 @@ const { body,check, validationResult } = require('express-validator');
         }
   });
 // Login
+
+
+// Import All Properties Start                   
+
+propertyRoutes.route('/import-properties').get(function(req,res){
+    Immobilie.importProperty(function(err,immobilie){
+          if (err){
+              res.status(400).send(err);
+          }
+          else
+          {
+              res.status(200).send(immobilie);
+          }
+    });
+});
+
+// Import All Properties End
+
 
 module.exports = propertyRoutes;
