@@ -848,7 +848,7 @@ function db_add_data(new_array,new_array1,new_zip){
                   var created_at=year + "-" + month + "-" + date + " " + hours + ":" + minutes + ":" + seconds;
 
                 
-                  // anbieters table  
+                  // anbieters table   
                   
                   var anbieternr=JSON.stringify(new_arr1.anbieter[0].anbieternr.toString());
                   var firma=JSON.stringify(new_arr1.anbieter[0].firma.toString());
