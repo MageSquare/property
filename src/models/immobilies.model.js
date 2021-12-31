@@ -1,6 +1,10 @@
 'use strict';
 const dbConn = require('../../config/db.config');
 const fs = require('fs');
+const extract = require('extract-zip');  //Module TO Extract Zip Files
+const path = require('path');            //Module To Get Root Path
+const xml2js = require('xml2js');        //Module To Convert Xml Data To JSON
+const parser = new xml2js.Parser({ attrkey: "ATTR" });   
     
 var Immobilie = function(immobilie){
 	this.openimmo_obid				= immobilie.openimmo_obid;
