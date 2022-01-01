@@ -3,6 +3,7 @@ bodyParser = require('body-parser'),
 cors = require('cors'),
 jwt = require('jsonwebtoken'),
 propertyRoutes= require('./src/routes/property.routes'),
+morgan = require('morgan'),
 userRoutes=require('./src/routes/user.routes');
 
 require('dotenv').config();
@@ -10,6 +11,7 @@ app =express();
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(cors());
+app.use(morgan('tiny'));
 
 // Routes For API
   app.use('/api',propertyRoutes);
