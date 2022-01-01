@@ -37,12 +37,21 @@ var Immobilie = function(immobilie){
 
 // Fetch Property By Id
     Immobilie.fetchProperty = function(id,result){
-        var sql = 'select * from immobilies where id ='+id;
+      var sql = 'select * from immobilies where id ='+id;
         dbConn.query(sql, function (err, res) {
             if (err) {
-                result(null, err);
+              let error = new Object();
+              error['message']='Something went wrong!';
+              result(error, null);
             } else {
-                result(null, res);
+              if(res.length>0){
+                  result(null, res);
+              }
+              else{
+                let error = new Object();
+                error['message']='Data Not Found!';
+                result(error, null);
+              }
             }
         });
     }
@@ -53,34 +62,52 @@ var Immobilie = function(immobilie){
     Immobilie.getProperties = function(pids,per_page,curr_page,result){
         let pid;
         let providerids = [];
-           let prov_ids;
-           let p_id;
+        let prov_ids;
+        let p_id;
+          for (var i = 0; i < pids.length; i++) {
+              pid=pids[i];
+              
+              if(pid < 10){
+                  providerids.push('0000'+pid);
+              }
+              else if(pid < 100){
+                  providerids.push('000'+pid);   
+              }
+              else if(pid < 1000){
+                  providerids.push('00'+pid);   
+              }
+              else if(pid < 10000){
+                  providerids.push('0'+pid);   
+              }
+              prov_ids=providerids;
+          }
 
-            for (var i = 0; i < pids.length; i++) {
-                    pid=pids[i];
-                    if(pid.provider_id < 10){
-                        providerids.push('0000'+pid.provider_id);
-                    }
-                    else if(pid.provider_id < 100){
-                        providerids.push('000'+pid.provider_id);   
-                    }
-                    else if(pid.provider_id < 1000){
-                        providerids.push('00'+pid.provider_id);   
-                    }
-                    else if(pid.provider_id < 10000){
-                        providerids.push('0'+pid.provider_id);   
-                    }
-                    prov_ids=providerids;
-            }
-            var sql ='select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc limit '+per_page+' offset '+curr_page+'';
-            dbConn.query(sql, function (err, data) {
-                if (err) {
-                    // console.log("err",err);
-                    result(null, err);
-                } else {
-                    result(null, data);
-                }
-            });
+          let offset = (curr_page-1)*per_page;
+
+          var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc';
+          if(!per_page && curr_page){
+            var sql =sql_query+' offset '+ offset +'';  
+          }  
+          else if(per_page && !curr_page){
+            var sql =sql_query+' limit '+ per_page+' ';
+          }
+          
+          else if(!per_page && !curr_page){
+            var sql =sql_query;
+          }
+          else if(per_page && curr_page){
+            var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
+          }
+
+          dbConn.query(sql, function (err, data) {
+              if (err) {
+                let error = new Object();
+                error['message']='No Data Found!';
+                result(error, null);
+              } else {
+                result(null, data);
+              }
+          });
     }
 // Get list of all properties by folder
 
@@ -90,7 +117,9 @@ var Immobilie = function(immobilie){
         var sql = 'select * from immobilies where `id` ='+id;
         dbConn.query(sql, function (err, data) {
             if (err) {
-                result(null,err);
+                    let error = new Object();
+                    error['message']='Something went wrong!';
+                    result(error, null);
             } else {
                     let top_directory;
                     let directory;
@@ -101,7 +130,6 @@ var Immobilie = function(immobilie){
                         immo_id=data[i].id;
                     }
                     var dirpath='./openimmo/'+top_directory+'/'+directory;
-                    // console.log(dirpath);
 
                     if(directory){
                         fs.rmdir(dirpath,{ recursive: true },removeDir);
@@ -116,7 +144,9 @@ var Immobilie = function(immobilie){
 
                         let anb_id;
                         if(err){
-                            result(null,err);
+                          let error = new Object();
+                          error['message']='No Data Found!';
+                          result(error, null);
                         }
                         else{
                             for (var i = 0; i < data.length; i++) {
@@ -126,7 +156,10 @@ var Immobilie = function(immobilie){
                                 dbConn.query(sql_anbieter,function(err,data){
 
                                     if(err){
-                                        result(null,'No Data Found!!');
+                                        let error = new Object();
+                                        error['message']='No Data Found!';
+                                        result(error, null);
+
                                     }
                                     else{
                                         let openimmos_id;
@@ -135,20 +168,26 @@ var Immobilie = function(immobilie){
                                         }
                                         dbConn.query('delete from immobilies where id='+id,function(err,data){
                                             if(err){
-                                                result(null,'Something went wrong');
+                                              let error = new Object();
+                                              error['message']='Can not delete record from immobilies!';
+                                              result(error, null);
                                             }
                                             else{
                                                 dbConn.query('delete from anbieters where id='+anb_id,function(err,data){
                                                     if(err){
-                                                        result(null,'Something went wrong');
+                                                        let error = new Object();
+                                                        error['message']='Can not delete record from anbieters!';
+                                                        result(error, null);
                                                     }
                                                     else{
                                                         dbConn.query('delete from openimmos where id='+openimmos_id,function(err,data){
                                                                if(err){
-                                                                    result(null,'Something went wrong');
+                                                                    let error = new Object();
+                                                                    error['message']='Can not delete record from openimmos!';
+                                                                    result(error, null);
                                                                }
                                                                else{
-                                                                   result(null,data);
+                                                                   result(null,"Record has deleted for id: " + immo_id);
                                                                }
                                                         }
                                                     )}
@@ -186,12 +225,38 @@ var Immobilie = function(immobilie){
                 }
             }
 
-            var sql="select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc limit "+per_page+" offset "+curr_page+"";
+            let offset = (curr_page-1)*per_page;
+            
+            var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc";
+            if(!per_page && curr_page){
+              var sql=sql_query+" offset "+ offset +"";
+            }  
+            else if(per_page && !curr_page){
+              var sql=sql_query+" limit "+ per_page +" ";
+            }
+            
+            else if(!per_page && !curr_page){
+              var sql=sql_query;
+            }
+            else if(per_page && curr_page){
+              var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
+            }
+
             dbConn.query(sql, function (err, data) {
                 if (err) {
-                    result(null,err);
+                    let error = new Object();
+                    error['message']='Something went wrong!';
+                    result(error, null);
                 } else {
+
+                  if(data.length>0){
                     result(null,data);
+                  }
+                  else{
+                    let error = new Object();
+                    error['message']='Data not found!';
+                    result(error, null);
+                  }
                 }
             });
     }
@@ -293,44 +358,48 @@ var Immobilie = function(immobilie){
 
 // Get Properties by login user
     Immobilie.userProperties = function(currentUser,per_page,curr_page,result){
-        var sql = "select * from profiles p where user_id = "+currentUser+" and p.deleted_at is null"
-        dbConn.query(sql,function(err,data){
-            if(err){
-                result(null,err);
-            }
-            else{
+        let offset = (curr_page-1)*per_page;
+          var sql = "select * from providers p where id = "+currentUser+" ";
+          dbConn.query(sql,function(err,data){
+              if(err){
+                let error = new Object();
+                error['message']='Something went wrong!';
+                result(error, null);
+              }
+              else{
                 let pid;
-                for (var i = 0; i < data.length; i++) {
-                    let provider_id = data[i].provider_id;
-                    if(provider_id){ 
-                        if(provider_id < 10){
-                            pid=('0000'+provider_id);
-                        }
-                        else if(provider_id < 100){
-                            pid=('000'+provider_id);   
-                        }
-                        else if(provider_id < 1000){
-                            pid=('00'+provider_id);   
-                        }
-                        else if(provider_id < 10000){
-                            pid=('0'+provider_id);   
-                        }
-                    }
-                }
-                    var sql="select * from immobilies i where json_unquote(json_extract(`verwaltung_techn`, '$.aktion.aktionart')) = 'CHANGE' and top_directory = "+pid+" limit "+per_page+" offset "+curr_page+"";
-                    
-                    dbConn.query(sql, function (err, data) {
-                    if (err) {
-                        result(null,err);
-                    } else {
+                  for (var i = 0; i < data.length; i++) {
+                      let provider_id = data[i].provider_dir;
+                      pid=provider_id;
+                  }
+                  var sql_query = "select * from immobilies i where json_unquote(json_extract(`verwaltung_techn`, '$.aktion.aktionart')) = 'CHANGE' and top_directory = "+pid+" ";
+                  if(!per_page && curr_page){
+                    var sql= sql_query + " offset "+ offset +"";
+                  }  
+                  else if(per_page && !curr_page){
+                    var sql=sql_query+ " limit "+ per_page +" ";
+                  }
+                  
+                  else if(!per_page && !curr_page){
+                    var sql=sql_query
+                  }
+                  else if(per_page && curr_page){
+                    var sql=sql_query+ " limit "+ per_page +" offset "+ offset+"";
+                  }
+                      dbConn.query(sql, function (err, data) {
+                      if (err) {
+                        let error = new Object();
+                        error['message']='No Data Found!';
+                        result(error, null);
+
+                      } else {
                         result(null,data);
-                    }
-                });
-            }
-        });
+                      }
+                  });
+              }
+          });
     }
 // Get Properties by login user
-
 
 
 
@@ -338,96 +407,93 @@ var Immobilie = function(immobilie){
 
 // Main function start
 
-Immobilie.importProperty =   function(result)          
-{
+    Immobilie.importProperty =   function(result){
+      var rootfolders = readFolder('openimmo/');
+      var files = [];     //Store All Files
+      var exist_zip =[];  //Store Exists Zip names
+      var new_zip =[];    //Store New zip names
+      var new_array =[];
+      var new_array1 =[];       
+      var res1;
 
- 
-  var rootfolders = readFolder('openimmo/');
-  var files = [];     //Store All Files
-  var exist_zip =[];  //Store Exists Zip names
-  var new_zip =[];    //Store New zip names
-  var new_array =[];
-  var new_array1 =[];       
-  var res1;
-
-      // Get Zip files from root(source) folders start
-      rootfolders.forEach(folder=>{
-        var file = readFolder('openimmo/'+folder);
-        file.forEach(items=>{
-          files.push(items);
-        });
-
-      });
-      // Get Zip files from root(source) folders end
-
-
-      var ress,makesubfolders;
-      ress= checkFileExist(files);    // Check and get  Zip File already exists in db or not
-      ress.then((data)=>{             // Return result of zip which is availale in db
-        exist_zip=data;               // Add already available zip to exist_zip array
-        var myarr=files;
-        var d;
-     
-        for (var i = 0; i < myarr.length; i++) {
-          var f=false;
-          var val=myarr[i];                                       
-          for (var j = 0; j < exist_zip.length; j++) {
-              if(val == exist_zip[j].filename){             //Compare files of both array
-                f=true;
-                break;
-            }
-          }
-
-          if(f==false){
-            new_zip.push(val);       //Push Zip names to new_zip which is not available in db
-          }
-        }
-      
-        if(new_zip.length>0){       //If new_zip contains any one zip(>0)
-
-             var add_arr=[],del_arr=[];   //Add and Del Array to Store propery which are to be added and deleted
-             
-             var make_zipfolders_xmlfiles=  make_zipfolder_xmlfile(rootfolders,new_zip);  //make zip folders and extract zip files
-            
-             make_zipfolders_xmlfiles.then((data)=>{ 
-        
-                  new_array=data;                 //If result returns store data to new_array
-
-                  setTimeout(()=>{                //Set time that executes read_xml and other code after specified time of extraction completion 
-
-                      var readxml= read_xml(new_array);   //To Read Xml Data
-                      readxml.then((data)=>{
-                          new_array1=data;            //Store result of XML to new_array1
-
-                          var check_openimmo_obid= db_check_openimmo_obid(new_array1);  //check openimmo_obid available in db or not
-
-                          check_openimmo_obid.then((data)=>{        //If openimmo_obid is there then add and delete data
-                
-                              var delete_data = db_delete_data(data['del_arr']);    //To Delete data from db
-
-                              var add_data = db_add_data(new_array,new_array1,new_zip);   //To add data into db
-                              
-                              var final_object={
-                                  "exists_file":exist_zip,
-                                  "database_updated_file":new_zip
-                              }                                   //Return FinalObject that shows list of exists file and updated file(Add & delete)
-
-                              result(null,final_object);  
-                          });
-                      }); 
-                  },1000);
+          // Get Zip files from root(source) folders start
+          rootfolders.forEach(folder=>{
+            var file = readFolder('openimmo/'+folder);
+            file.forEach(items=>{
+              files.push(items);
             });
-        }
-        else
-        {
-      
-            var ext={
-                "exist_zip":exist_zip
-            }                         //Returns only exists zip if noy added any newly zip
-            result(null,ext);
-      }
-  });
-}
+
+          });
+          // Get Zip files from root(source) folders end
+
+
+          var ress,makesubfolders;
+          ress= checkFileExist(files);    // Check and get  Zip File already exists in db or not
+          ress.then((data)=>{             // Return result of zip which is availale in db
+            exist_zip=data;               // Add already available zip to exist_zip array
+            var myarr=files;
+            var d;
+         
+            for (var i = 0; i < myarr.length; i++) {
+              var f=false;
+              var val=myarr[i];                                       
+              for (var j = 0; j < exist_zip.length; j++) {
+                  if(val == exist_zip[j].filename){             //Compare files of both array
+                    f=true;
+                    break;
+                }
+              }
+
+              if(f==false){
+                new_zip.push(val);       //Push Zip names to new_zip which is not available in db
+              }
+            }
+          
+            if(new_zip.length>0){       //If new_zip contains any one zip(>0)
+
+                 var add_arr=[],del_arr=[];   //Add and Del Array to Store propery which are to be added and deleted
+                 
+                 var make_zipfolders_xmlfiles=  make_zipfolder_xmlfile(rootfolders,new_zip);  //make zip folders and extract zip files
+                
+                 make_zipfolders_xmlfiles.then((data)=>{ 
+            
+                      new_array=data;                 //If result returns store data to new_array
+
+                      setTimeout(()=>{                //Set time that executes read_xml and other code after specified time of extraction completion 
+
+                          var readxml= read_xml(new_array);   //To Read Xml Data
+                          readxml.then((data)=>{
+                              new_array1=data;            //Store result of XML to new_array1
+
+                              var check_openimmo_obid= db_check_openimmo_obid(new_array1);  //check openimmo_obid available in db or not
+
+                              check_openimmo_obid.then((data)=>{        //If openimmo_obid is there then add and delete data
+                    
+                                  var delete_data = db_delete_data(data['del_arr']);    //To Delete data from db
+
+                                  var add_data = db_add_data(new_array,new_array1,new_zip);   //To add data into db
+                                  
+                                  var final_object={
+                                      "exists_file":exist_zip,
+                                      "database_updated_file":new_zip
+                                  }                                   //Return FinalObject that shows list of exists file and updated file(Add & delete)
+
+                                  result(null,final_object);  
+                              });
+                          }); 
+                      },1000);
+                });
+            }
+            else
+            {
+          
+                var ext={
+                    "exist_zip":exist_zip
+                }                         //Returns only exists zip if noy added any newly zip
+                result(null,ext);
+          }
+      });
+    }
 
 // Main function end
 
@@ -943,6 +1009,5 @@ function checkFileExist(files){
 // Check and Get New Zip which is available in db end
 
 // Hiteshree Custom method to display Import Api End
-
 
 module.exports = Immobilie;

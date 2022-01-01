@@ -1,16 +1,17 @@
 const express = require('express');
 const Providers = require('../models/providers.model');
+const Immobilie = require('../models/immobilies.model');
 const userRoutes = express.Router();
 
 // get Property created by user
     userRoutes.route('/get_my_created_property').get(function(req,res){
-        let currentUser=2;
+        let currentUser=req.body.userId;
         let per_page=req.query.per_page;
         let curr_page=req.query.curr_page;
 
-            Profiles.userProperties(currentUser,per_page,curr_page,function(err, data) {    
+            Immobilie.userProperties(currentUser,per_page,curr_page,function(err, data) {    
             if (err){
-                res.status(400).send("No Data found");
+                res.status(400).send(err);
             }
             else
             {
