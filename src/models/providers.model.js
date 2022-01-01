@@ -101,8 +101,8 @@ var Providers = function(providers){
 			city = JSON.stringify(providers.city),
 			pic = JSON.stringify(providers.pic),
 			role = JSON.stringify(providers.role),
-			created_at = JSON.stringify(new Date()),
-			updated_at = JSON.stringify(new Date()),
+			created_at = JSON.stringify(new Date('Y-m-d H:i:s')),
+			updated_at = JSON.stringify(new Date('Y-m-d H:i:s')),
 			provider_dir = providers.provider_dir;
 
 	    var sql = "select * from providers p where p.email = "+mailId+" ";
@@ -119,7 +119,7 @@ var Providers = function(providers){
 	        		dbConn.query(sql, function(err,res){
 	        			if(err){
 	        				let error = new Object();
-	        				error['message']='Something went wrong!';
+	        				error['message']=err;
 	            			result(error, null);
 	        			}
 	        			else{
