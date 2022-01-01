@@ -3,42 +3,51 @@ const dbConn = require('../../config/db.config');
 const fs = require('fs');
 
 var Immobilie = function(immobilie){
-	this.openimmo_obid				= immobilie.openimmo_obid;
-	this.objektkategorie			= immobilie.objektkategorie;
-	this.geo						= immobilie.geo;
-	this.kontaktperson				= immobilie.kontaktperson;
-	this.weitere_adresse			= immobilie.weitere_adresse;
-	this.preise						= immobilie.preise;
-	this.bieterverfahren			= immobilie.bieterverfahren;
-	this.versteigerung				= immobilie.versteigerung;
-	this.flaechen					= immobilie.flaechen;
-	this.ausstattung				= immobilie.ausstattung;
-	this.zustand_angaben			= immobilie.zustand_angaben;
-	this.bewertung					= immobilie.bewertung;
-	this.infrastruktur				= immobilie.infrastruktur;
-	this.freitexte					= immobilie.freitexte;
-	this.anhaenge					= immobilie.anhaenge;
-	this.verwaltung_objekt			= immobilie.verwaltung_objekt;
-	this.verwaltung_techn			= immobilie.verwaltung_techn;
-	this.user_defined_simplefield	= immobilie.user_defined_simplefield;
-	this.user_defined_anyfield		= immobilie.user_defined_anyfield;
-	this.user_defined_extend		= immobilie.user_defined_extend;
-	this.update_time				= new Date();
-	this.top_directory				= immobilie.top_directory;
-	this.directory					= immobilie.directory;
-	this.created_at					= new Date();
-	this.updated_at					= new Date();
-	this.deleted_at					= new Date();
+  this.openimmo_obid            = immobilie.openimmo_obid;
+  this.objektkategorie          = immobilie.objektkategorie;
+  this.geo                      = immobilie.geo;
+  this.kontaktperson            = immobilie.kontaktperson;
+  this.weitere_adresse          = immobilie.weitere_adresse;
+  this.preise                    = immobilie.preise;
+  this.bieterverfahren          = immobilie.bieterverfahren;
+  this.versteigerung            = immobilie.versteigerung;
+  this.flaechen                  = immobilie.flaechen;
+  this.ausstattung              = immobilie.ausstattung;
+  this.zustand_angaben          = immobilie.zustand_angaben;
+  this.bewertung                = immobilie.bewertung;
+  this.infrastruktur            = immobilie.infrastruktur;
+  this.freitexte                = immobilie.freitexte;
+  this.anhaenge                  = immobilie.anhaenge;
+  this.verwaltung_objekt        = immobilie.verwaltung_objekt;
+  this.verwaltung_techn          = immobilie.verwaltung_techn;
+  this.user_defined_simplefield  = immobilie.user_defined_simplefield;
+  this.user_defined_anyfield    = immobilie.user_defined_anyfield;
+  this.user_defined_extend      = immobilie.user_defined_extend;
+  this.update_time              = new Date();
+  this.top_directory            = immobilie.top_directory;
+  this.directory                = immobilie.directory;
+  this.created_at                = new Date();
+  this.updated_at                = new Date();
+  this.deleted_at                = new Date();
 }
 
 // Fetch Property By Id
     Immobilie.fetchProperty = function(id,result){
-    	var sql = 'select * from immobilies where id ='+id;
+      var sql = 'select * from immobilies where id ='+id;
         dbConn.query(sql, function (err, res) {
             if (err) {
-            	result(null, err);
+              let error = new Object();
+              error['message']='Something went wrong!';
+              result(error, null);
             } else {
-            	result(null, res);
+              if(res.length>0){
+                  result(null, res);
+              }
+              else{
+                let error = new Object();
+                error['message']='Data Not Found!';
+                result(error, null);
+              }
             }
         });
     }
@@ -47,46 +56,67 @@ var Immobilie = function(immobilie){
 
 // Get list of all properties by folder
     Immobilie.getProperties = function(pids,per_page,curr_page,result){
-    	let pid;
-        let providerids = [];
-       	let prov_ids;
-       	let p_id;
 
-            for (var i = 0; i < pids.length; i++) {
-                    pid=pids[i];
-                    if(pid.provider_id < 10){
-                        providerids.push('0000'+pid.provider_id);
-                    }
-                    else if(pid.provider_id < 100){
-                        providerids.push('000'+pid.provider_id);   
-                    }
-                    else if(pid.provider_id < 1000){
-                        providerids.push('00'+pid.provider_id);   
-                    }
-                    else if(pid.provider_id < 10000){
-                        providerids.push('0'+pid.provider_id);   
-                    }
-                    prov_ids=providerids;
-            }
-        	var sql ='select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc limit '+per_page+' offset '+curr_page+'';
-            dbConn.query(sql, function (err, data) {
-    	        if (err) {
-                    // console.log("err",err);
-    	        	result(null, err);
-    	        } else {
-    	        	result(null, data);
-    	        }
-    	    });
+        let pid;
+        let providerids = [];
+        let prov_ids;
+        let p_id;
+          for (var i = 0; i < pids.length; i++) {
+              pid=pids[i];
+              
+              if(pid < 10){
+                  providerids.push('0000'+pid);
+              }
+              else if(pid < 100){
+                  providerids.push('000'+pid);   
+              }
+              else if(pid < 1000){
+                  providerids.push('00'+pid);   
+              }
+              else if(pid < 10000){
+                  providerids.push('0'+pid);   
+              }
+              prov_ids=providerids;
+          }
+
+          let offset = (curr_page-1)*per_page;
+
+          var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc';
+          if(!per_page && curr_page){
+            var sql =sql_query+' offset '+ offset +'';  
+          }  
+          else if(per_page && !curr_page){
+            var sql =sql_query+' limit '+ per_page+' ';
+          }
+          
+          else if(!per_page && !curr_page){
+            var sql =sql_query;
+          }
+          else if(per_page && curr_page){
+            var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
+          }
+
+          dbConn.query(sql, function (err, data) {
+              if (err) {
+                let error = new Object();
+                error['message']='No Data Found!';
+                result(error, null);
+              } else {
+                result(null, data);
+              }
+          });
     }
 // Get list of all properties by folder
 
 
 // Delete created property
     Immobilie.deleteCreatedProperty = function(id,result){
-    	var sql = 'select * from immobilies where `id` ='+id;
+      var sql = 'select * from immobilies where `id` ='+id;
         dbConn.query(sql, function (err, data) {
             if (err) {
-                result(null,err);
+                    let error = new Object();
+                    error['message']='Something went wrong!';
+                    result(error, null);
             } else {
                     let top_directory;
                     let directory;
@@ -97,7 +127,6 @@ var Immobilie = function(immobilie){
                         immo_id=data[i].id;
                     }
                     var dirpath='./openimmo/'+top_directory+'/'+directory;
-                    // console.log(dirpath);
 
                     if(directory){
                         fs.rmdir(dirpath,{ recursive: true },removeDir);
@@ -112,7 +141,9 @@ var Immobilie = function(immobilie){
 
                         let anb_id;
                         if(err){
-                            result(null,err);
+                          let error = new Object();
+                          error['message']='No Data Found!';
+                          result(error, null);
                         }
                         else{
                             for (var i = 0; i < data.length; i++) {
@@ -122,7 +153,10 @@ var Immobilie = function(immobilie){
                                 dbConn.query(sql_anbieter,function(err,data){
 
                                     if(err){
-                                        result(null,'No Data Found!!');
+                                        let error = new Object();
+                                        error['message']='No Data Found!';
+                                        result(error, null);
+
                                     }
                                     else{
                                         let openimmos_id;
@@ -131,20 +165,26 @@ var Immobilie = function(immobilie){
                                         }
                                         dbConn.query('delete from immobilies where id='+id,function(err,data){
                                             if(err){
-                                                result(null,'Something went wrong');
+                                              let error = new Object();
+                                              error['message']='Can not delete record from immobilies!';
+                                              result(error, null);
                                             }
                                             else{
                                                 dbConn.query('delete from anbieters where id='+anb_id,function(err,data){
                                                     if(err){
-                                                        result(null,'Something went wrong');
+                                                        let error = new Object();
+                                                        error['message']='Can not delete record from anbieters!';
+                                                        result(error, null);
                                                     }
                                                     else{
                                                         dbConn.query('delete from openimmos where id='+openimmos_id,function(err,data){
                                                                if(err){
-                                                                    result(null,'Something went wrong');
+                                                                    let error = new Object();
+                                                                    error['message']='Can not delete record from openimmos!';
+                                                                    result(error, null);
                                                                }
                                                                else{
-                                                                   result(null,data);
+                                                                   result(null,"Record has deleted for id: " + immo_id);
                                                                }
                                                         }
                                                     )}
@@ -182,12 +222,38 @@ var Immobilie = function(immobilie){
                 }
             }
 
-            var sql="select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc limit "+per_page+" offset "+curr_page+"";
+            let offset = (curr_page-1)*per_page;
+            
+            var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc";
+            if(!per_page && curr_page){
+              var sql=sql_query+" offset "+ offset +"";
+            }  
+            else if(per_page && !curr_page){
+              var sql=sql_query+" limit "+ per_page +" ";
+            }
+            
+            else if(!per_page && !curr_page){
+              var sql=sql_query;
+            }
+            else if(per_page && curr_page){
+              var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
+            }
+
             dbConn.query(sql, function (err, data) {
                 if (err) {
-                    result(null,err);
+                    let error = new Object();
+                    error['message']='Something went wrong!';
+                    result(error, null);
                 } else {
+
+                  if(data.length>0){
                     result(null,data);
+                  }
+                  else{
+                    let error = new Object();
+                    error['message']='Data not found!';
+                    result(error, null);
+                  }
                 }
             });
     }
@@ -288,43 +354,52 @@ var Immobilie = function(immobilie){
 // Custom method to display all property end
 
 // Get Properties by login user
-    Immobilie.userProperties = function(currentUser,per_page,curr_page,result){
-        var sql = "select * from profiles p where user_id = "+currentUser+" and p.deleted_at is null"
-        dbConn.query(sql,function(err,data){
-            if(err){
-                result(null,err);
-            }
-            else{
-                let pid;
-                for (var i = 0; i < data.length; i++) {
-                    let provider_id = data[i].provider_id;
-                    if(provider_id){ 
-                        if(provider_id < 10){
-                            pid=('0000'+provider_id);
-                        }
-                        else if(provider_id < 100){
-                            pid=('000'+provider_id);   
-                        }
-                        else if(provider_id < 1000){
-                            pid=('00'+provider_id);   
-                        }
-                        else if(provider_id < 10000){
-                            pid=('0'+provider_id);   
-                        }
-                    }
-                }
-                    var sql="select * from immobilies i where json_unquote(json_extract(`verwaltung_techn`, '$.aktion.aktionart')) = 'CHANGE' and top_directory = "+pid+" limit "+per_page+" offset "+curr_page+"";
-                    
-                    dbConn.query(sql, function (err, data) {
-                    if (err) {
-                        result(null,err);
-                    } else {
-                        result(null,data);
-                    }
-                });
-            }
-        });
-    }
+  Immobilie.userProperties = function(currentUser,per_page,curr_page,result){
+
+    let offset = (curr_page-1)*per_page;
+
+      var sql = "select * from providers p where id = "+currentUser+" ";
+
+      dbConn.query(sql,function(err,data){
+          if(err){
+            let error = new Object();
+            error['message']='Something went wrong!';
+            result(error, null);
+          }
+          else{
+            let pid;
+              for (var i = 0; i < data.length; i++) {
+                  let provider_id = data[i].provider_dir;
+                  pid=provider_id;
+              }
+              var sql_query = "select * from immobilies i where json_unquote(json_extract(`verwaltung_techn`, '$.aktion.aktionart')) = 'CHANGE' and top_directory = "+pid+" ";
+              if(!per_page && curr_page){
+                var sql= sql_query + " offset "+ offset +"";
+              }  
+              else if(per_page && !curr_page){
+                var sql=sql_query+ " limit "+ per_page +" ";
+              }
+              
+              else if(!per_page && !curr_page){
+                var sql=sql_query
+              }
+              else if(per_page && curr_page){
+                var sql=sql_query+ " limit "+ per_page +" offset "+ offset+"";
+              }
+                  dbConn.query(sql, function (err, data) {
+                  if (err) {
+                    let error = new Object();
+                    error['message']='No Data Found!';
+                    result(error, null);
+
+                  } else {
+                    result(null,data);
+                  }
+              });
+          }
+      });
+  }
 // Get Properties by login user
 
 module.exports = Immobilie;
+

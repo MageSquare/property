@@ -3,11 +3,12 @@ const Immobilie = require('../models/immobilies.model');
 const Providers = require('../models/providers.model');
 const dbConn = require('../../config/db.config');
 const propertyRoutes = express.Router();
+var jwt = require('jsonwebtoken');
 const { body,check, validationResult } = require('express-validator');
 
 // #### Get one properties by id Start #####
   propertyRoutes.route('/property').get(function (req, res){
-  	let id = req.query.id;  
+    let id = req.query.id;  
     if(id)
     {
           Immobilie.getPropertyByObjectId(req.query.id,function(err, immobilie) {
@@ -25,7 +26,7 @@ const { body,check, validationResult } = require('express-validator');
       res.status(400).send("Invalid Id");
     }
   });
-// #####  Get one properties by id End  ####
+// #####  Get one properties by id End  ####  #
 
 
 // Get All Properties Start
@@ -50,7 +51,7 @@ const { body,check, validationResult } = require('express-validator');
       const id = req.query.id;
       Immobilie.fetchProperty(id,function(err, immobiles) {    
           if (err){
-              res.status(400).send("No Data found");
+              res.status(400).send(err);
           }
           else
           {
@@ -63,13 +64,13 @@ const { body,check, validationResult } = require('express-validator');
 
 // Get list of all properties by folder by POST method
   propertyRoutes.route('/properties').post(function(req,res){
-      let provider_id = req.query.value;
-      let pageSize = req.query.per_page;
-      let curr_page = req.query.curr_page;
+      let provider_id = req.body.value;
+      let pageSize = req.body.per_page;
+      let curr_page = req.body.curr_page;
 
           Immobilie.getProperties(provider_id,pageSize,curr_page,function(err, data) {    
               if (err){
-                  res.status(400).send("No Data found");
+                  res.status(400).send(err);
               }
               else
               {
@@ -86,7 +87,7 @@ const { body,check, validationResult } = require('express-validator');
       const id = req.query.id;
       Immobilie.deleteCreatedProperty(id,function(err, data) {    
           if (err){
-              res.status(400).send("No Data found");
+              res.status(400).send(err);
           }
           else
           {
@@ -105,7 +106,7 @@ const { body,check, validationResult } = require('express-validator');
       let curr_page = req.query.curr_page;
       Immobilie.verkauftProperties(provider_id,pageSize,curr_page,function(err, data) {    
           if (err){
-              res.status(400).send("No Data found");
+              res.status(400).send(err);
           }
           else
           {
@@ -117,98 +118,95 @@ const { body,check, validationResult } = require('express-validator');
 // Get list of all verkauft properties
 
 // Register
-  propertyRoutes.route('/register').post(async function(req,res){
+propertyRoutes.route('/register').post(async function(req,res){
 
-      await check('email',"Email is required").notEmpty().run(req);
-      await check('password',"Password is required").notEmpty().run(req);
-      await check('email',"Enter valid email Address").isEmail().run(req);
-      await check('firstname',"Firstname is required").notEmpty().run(req);
-      await check('lastname',"Lastname is required").notEmpty().run(req);
-      await check('password').isLength({ min: 8 }).withMessage('Password must be at least 8 chars long').run(req);
-      await check('password').matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d@$.!%*#?&]/).withMessage('Please enter a password at least 8 character and contain At least one uppercase.At least one lower case.At least one special character.').run(req);
+    await check('email',"Email is required").notEmpty().run(req);
+    await check('password',"Password is required").notEmpty().run(req);
+    await check('email',"Enter valid email Address").isEmail().run(req);
+    await check('firstname',"Firstname is required").notEmpty().run(req);
+    await check('lastname',"Lastname is required").notEmpty().run(req);
+    await check('password').isLength({ min: 8 }).withMessage('Password must be at least 8 chars long').run(req);
+    await check('password').matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z\d@$.!%*#?&]/).withMessage('Please enter a password at least 8 character and contain At least one uppercase.At least one lower case.At least one special character.').run(req);
 
+   const errors = validationResult(req);
 
-     const errors = validationResult(req);
+   let firstname = req.body.firstname,
+    lastname = req.body.lastname,
+    email = req.body.email,
+    password = req.body.password,
+    phone = req.body.phone,
+    firma = req.body.firma,
+    provider_dir = req.body.provider_dir,
+    state = req.body.state,
+    city = req.body.city,
+    pic = req.body.pic;
 
-     let firstname = req.body.firstname,
-      lastname = req.body.lastname,
-      email = req.body.email,
-      password = req.body.password,
-      phone = req.body.phone,
-      firma = req.body.firma,
-      provider_dir = req.body.provider_dir,
-      state = req.body.state,
-      city = req.body.city,
-      pic = req.body.pic;
+    let providers = new Providers(req.body);
 
-      let providers = new Providers(req.body);
+    if(phone == null || phone == ''){
 
-      if(phone == null || phone == ''){
+        providers.phone = null;
+    }
+    else{
+        providers.phone = phone;
+    }
 
-          providers.phone = null;
-      }
-      else{
-          providers.phone = phone;
-      }
+    if(firma == null || firma == ''){
+      
+        providers.firma = null;
+    }
+    else{
+        providers.firma = firma;
+    }
 
-      if(firma == null || firma == ''){
-        
-          providers.firma = null;
-      }
-      else{
-          providers.firma = firma;
-      }
+    if(state == null || state == ''){
+      
+        providers.state = null;
+    }
+    else{
+        providers.state = state;
+    }
 
-      if(state == null || state == ''){
-        
-          providers.state = null;
-      }
-      else{
-          providers.state = state;
-      }
+    if(city == null || city == ''){
+      
+        providers.city = null;
+    }
+    else{
+        providers.city = city;
+    }
 
-      if(city == null || city == ''){
-        
-          providers.city = null;
-      }
-      else{
-          providers.city = city;
-      }
+    if(state == null || state == ''){
+      
+        providers.pic = null;
+    }
+    else{
+        providers.pic = pic;
+    }
 
-      if(state == null || state == ''){
-        
-          providers.pic = null;
-      }
-      else{
-          providers.pic = pic;
-      }
+    providers.fullname = firstname.concat(' ', lastname);
+    providers.provider_dir = null;
+    providers.role = 0;
 
-      providers.fullname = firstname.concat(' ', lastname);
-      providers.provider_dir = null;
-      providers.role = 0;
+    if (!errors.isEmpty()) {
+            res.status(400).send(errors);
+        }
 
-      if (!errors.isEmpty()) {
-              res.status(400).send(errors);
+    else
+    {
+        Providers.register(providers,function(err, data) {  
+          if (err){
+              res.status(400).send(err);
+          }
+          else
+          {
+             res.status(200).json(data);
           }
 
-      else
-      {
+        });
+    }
+    
 
-          Providers.register(providers,function(err, data) {  
-            if (err){
-                res.status(400).send(err);
-            }
-            else
-            {
-               res.status(200).json(data);
-            }
-
-          });
-
-      }
-      
-
-  });
+});
 // register
 
 // Login
