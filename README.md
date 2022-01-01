@@ -11,5 +11,5 @@ Add "openimmo" folder in root
 		Add zip into the your provider id folders
 
 
-Create One Folder unzip into the root 
+Create One Folder "unzip" into the root 
 
