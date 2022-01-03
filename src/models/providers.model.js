@@ -2,7 +2,9 @@
 const dbConn = require('../../config/db.config'),
 	  bcrypt = require('bcrypt'),
 	  jwt = require('jsonwebtoken'),
-	  nodemailer = require("nodemailer");
+	  nodemailer = require("nodemailer"),
+	  generator = require('generate-password');
+
 require('dotenv').config();
 
 //Set Mail Access
@@ -170,7 +172,7 @@ var Providers = function(providers){
 // Register
 
 // Forget Password API
-	Providers.forgetPassword = function(origin_server,url,receiver_email,result){
+	Providers.forgetPassword = function(origin_server,url,receiver_email,forgetandreset,result){
 
 		let rec_mail=receiver_email;
 		let mailId=JSON.stringify(receiver_email);
@@ -198,18 +200,53 @@ var Providers = function(providers){
 
 			   			var origin= origin_server;
 			   			let baseUrl=url;
-						const token = jwt.sign({id: [rec_id,new Date()]}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIREIN });
-			   			var resetUrl = 'http://'+origin+baseUrl+'/reset_password?token='+token;
-
-			   			let mail_send = mailSending(resetUrl,rec_id,rec_mail,receiver_name);
-			   			
-			   			if(mail_send){
-			   				result(null,"Email has been send");
+			   			let mail_send;
+			   			if(forgetandreset==false){
+			   				let pswd=0;
+							const token = jwt.sign({id: [rec_id,new Date()]}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIREIN });
+				   			var resetUrl = 'http://'+origin+baseUrl+'/reset_password?token='+token;
+				   			
+				   			 mail_send = mailSending(resetUrl,pswd,rec_id,rec_mail);
+				   				if(mail_send){
+				   					result(null,"Email has been send");
+					   			}
+					   			else{
+					   				result(null,"Sorry! Not Able To Send Email.");
+					   			}
 			   			}
 			   			else{
-			   				result(null,"Sorry! Not Able To Send Email.");
+						   		var new_password = generator.generate({
+									length: 8,
+									numbers: true,
+									symbols: true,
+									lowercase: true,
+									uppercase: true
+								});
+
+								let round = Number(process.env.SALT);
+								const salt = bcrypt.genSaltSync(round);
+								let password = JSON.stringify(bcrypt.hashSync(new_password,salt));
+								var sql = "update providers SET password ="+password+" where id="+rec_id+" ";
+								dbConn.query(sql, function(err,res){
+					     			if(err){
+					     				let error = new Object();
+				        				error['message']=err;
+				           				result(error, null);
+					     			}
+					     			else{
+					     				let url=0;
+						   				mail_send = mailSending(url,new_password,rec_id,rec_mail);
+							   				if(mail_send){
+								   				result(null,"Email has been send");
+								   			}
+								   			else{
+								   				result(null,"Sorry! Not Able To Send Email.");
+								   			}
+					     			}
+					     		});
 			   			}
-			     	}
+			   			
+			   		}
 			     	else{
 			     		let error = new Object();
 		        		error['message']='The email is not existing in our application!';
@@ -266,19 +303,32 @@ var Providers = function(providers){
 
 
 // Send mail to USer For forgot password
-   async function mailSending(resetUrl,rec_id,receiver_email,receiver_name) {
+   async function mailSending(resetUrl,new_password,rec_id,receiver_email) {
+   			
    			let rc_mail = receiver_email;
-   			let url = JSON.stringify(resetUrl);
+			return new Promise((resolve,reject)=>{  	
 
-			return new Promise((resolve,reject)=>{
-				// Set data for customer
-		      var receiver_email = {
-		          to:rc_mail,
-		          subject: "You are about to reset your password.",
-		          sender: "admin",
-		          html:'<p>Click <a href= ' + url + '>here</a> to reset your password</p>'
-		      };
-			      // send mail to user
+				// Set data for user
+				if(resetUrl==0){
+					let pswd = JSON.stringify(new_password);
+					var receiver_email = {
+			          to:rc_mail,
+			          subject: "You are about to reset your password.",
+			          sender: "admin",
+			          html:'<p>Your Password Has Updated with: '+ pswd +'</p>'
+		     	 };
+				}
+				else if(new_password==0)
+				{
+				  let url = JSON.stringify(resetUrl);
+			      var receiver_email = {
+			          to:rc_mail,
+			          subject: "You are about to reset your password.",
+			          sender: "admin",
+			          html:'<p>Click <a href= ' + url + '>here</a> to reset your password</p>'
+			      };					
+				}
+				// send mail to user
 			      transporter.sendMail(receiver_email, function (error, response) {
 			          if (error) {
 		                return 0;
