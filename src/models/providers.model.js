@@ -190,12 +190,15 @@ var Providers = function(providers){
 
 			     		let receiver_name;
 			     		let rec_id;
+			     		let pswd_updated_date;
 
 			   			for (var i = 0; i < res.length; i++) {
-			   				let name = res[i].name;
+			   				let name = res[i].fullname;
 			   				receiver_name=name;
 			   				let id = res[i].id;
 			   				rec_id = id;
+			   				let date=res[i].updated_at;
+			   				pswd_updated_date=date;
 			   			}
 
 			   			var origin= origin_server;
@@ -206,7 +209,7 @@ var Providers = function(providers){
 							const token = jwt.sign({id: [rec_id,new Date()]}, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIREIN });
 				   			var resetUrl = 'http://'+origin+baseUrl+'/reset_password?token='+token;
 				   			
-				   			 mail_send = mailSending(resetUrl,pswd,rec_id,rec_mail);
+				   			 mail_send = mailSending(resetUrl,pswd,rec_id,rec_mail,receiver_name,pswd_updated_date);
 				   				if(mail_send){
 				   					result(null,"Email has been send");
 					   			}
@@ -235,7 +238,7 @@ var Providers = function(providers){
 					     			}
 					     			else{
 					     				let url=0;
-						   				mail_send = mailSending(url,new_password,rec_id,rec_mail);
+						   				mail_send = mailSending(url,new_password,rec_id,rec_mail,receiver_name,pswd_updated_date);
 							   				if(mail_send){
 								   				result(null,"Email has been send");
 								   			}
@@ -303,9 +306,12 @@ var Providers = function(providers){
 
 
 // Send mail to USer For forgot password
-   async function mailSending(resetUrl,new_password,rec_id,receiver_email) {
+   async function mailSending(resetUrl,new_password,rec_id,receiver_email,receiver_name,pswd_updated_date) {
    			
    			let rc_mail = receiver_email;
+   			let pswd_updation = pswd_updated_date;
+   			let rc_name = receiver_name;
+
 			return new Promise((resolve,reject)=>{  	
 
 				// Set data for user
@@ -315,7 +321,7 @@ var Providers = function(providers){
 			          to:rc_mail,
 			          subject: "You are about to reset your password.",
 			          sender: "admin",
-			          html:'<p>Your Password Has Updated with: '+ pswd +'</p>'
+			          html:'<p>Hello '+ receiver_name +',<br/>We have get request to change your password.<br/>We have updated your password on '+pswd_updation+'.<br/>Your New password is : '+pswd+'</p>'
 		     	 };
 				}
 				else if(new_password==0)
@@ -325,7 +331,7 @@ var Providers = function(providers){
 			          to:rc_mail,
 			          subject: "You are about to reset your password.",
 			          sender: "admin",
-			          html:'<p>Click <a href= ' + url + '>here</a> to reset your password</p>'
+			          html:'<p>Hello '+ receiver_name +',<br/> Click <a href= ' + url + '>here</a> to reset your password</p>'
 			      };					
 				}
 				// send mail to user
