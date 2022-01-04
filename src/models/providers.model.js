@@ -306,7 +306,7 @@ var Providers = function(providers){
 
 
 // Send mail to USer For forgot password
-   function mailSending(resetUrl,new_password,rec_id,receiver_email,receiver_name,pswd_updated_date) {
+   async function mailSending(resetUrl,new_password,rec_id,receiver_email,receiver_name,pswd_updated_date) {
    			
    			let rc_mail = receiver_email;
    			let pswd_updation = pswd_updated_date;
