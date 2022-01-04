@@ -350,6 +350,15 @@ const upload = multer({ storage: storage }).single("demo_zip");
   propertyRoutes.route('/toggle_publish/:id').get(function(req,res){
       const id = req.params.id;
       Immobilie.togglepublish(id,function(err, data) {    
+        if (err){
+            res.status(400).send(err);
+        }
+        else
+        {
+            res.status(200).send(data);
+        }
+    });
+});
 //Toggle Publish property
 
 
