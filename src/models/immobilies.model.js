@@ -1010,4 +1010,57 @@ function checkFileExist(files){
 
 // Hiteshree Custom method to display Import Api End
 
+
+//Toggle Publish property
+Immobilie.togglepublish = function(id){
+  var date = new Date();
+  var dd = String(date.getDate()).padStart(2, '0');
+  var mm = String(date.getMonth() + 1).padStart(2, '0');
+  var yyyy = date.getFullYear();
+  let h = date.getHours();
+  let m = date.getMinutes();
+  let s = date.getSeconds();
+
+  
+  date = yyyy + ':' + mm + ':' + dd + ' ' + h+ ':' + m +':' + s;
+  
+  var sql = 'select *  from `immobilies` where id = '+id;
+    dbConn.query(sql, function (err, result) {
+      // if(err){
+      //   res.send(err);
+      // }else{
+          var data =result[0].deleted_at;
+        
+          if(data !== null && data !== '0000-00-00 00:00:00'){
+           var sql_up= 'update `immobilies` set deleted_at= "NULL" where id ='+id 
+           dbConn.query(sql_up, function (err, result) {
+            if(err){
+              res.status(503).send(err);
+            }else{
+                // res.status(200).json({msg:"property unpublish successfully !"});
+                console.log("property unpublish successfully !");
+            }
+            
+          });
+        }
+        else{
+          var sql_up_2= 'update `immobilies` set deleted_at="'+ date +'" where id ='+id 
+          dbConn.query(sql_up_2, function (err, result) {
+            if(err){
+              res.status(503).send(err);
+            }else{
+              // res.status(200).json({msg:" property published successfully !"}); 
+              console.log("property published successfully !");
+            }
+            
+          });
+          }
+
+      // }
+});
+}
+
+//Toggle Publish property
+
+
 module.exports = Immobilie;
