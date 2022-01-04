@@ -5,6 +5,18 @@ const dbConn = require('../../config/db.config');
 const propertyRoutes = express.Router();
 var jwt = require('jsonwebtoken');
 const { body,check, validationResult } = require('express-validator');
+const multer = require('multer');
+var storage = multer.diskStorage({   
+   
+   filename: function (req, file, cb) { 
+      cb(null , file.originalname);   
+   }  ,   
+   destination: function(req, file, cb) { 
+      var folder=file.originalname.substring(0,5);
+      cb(null, 'openimmo/'+folder);       
+   }
+}); 
+const upload = multer({ storage: storage }).single("demo_zip"); 
 
 // #### Get one properties by id Start #####
   propertyRoutes.route('/property').get(function (req, res){
@@ -338,7 +350,22 @@ const { body,check, validationResult } = require('express-validator');
   propertyRoutes.route('/toggle_publish/:id').get(function(req,res){
       const id = req.params.id;
       Immobilie.togglepublish(id,function(err, data) {    
+//Toggle Publish property
+
+
+// Import Single Properties Start
+
+propertyRoutes.route("/single_import-properties").post(function(req,res) {
+   upload(req,res,(err) => {
+    if(err){
+      res.status(400);
+    }
+    
+     var myfile=req.file.originalname;
+     Immobilie.SingleimportProperty(myfile,function(err,immobilie){
+
           if (err){
+              console.log(err);
               res.status(400).send(err);
           }
           else
@@ -346,8 +373,39 @@ const { body,check, validationResult } = require('express-validator');
               res.status(200).send(data);
           }
       });
-  });
+    });
+}); 
+  
 
-//Toggle Publish property
+// Import Single Properties End
+
+// Search Property Start
+
+propertyRoutes.route('/properties-search').get(function(req,res){
+  let types_of_use = req.query.types_of_use; 
+  let surface_min=req.query.surface_min;
+  let price_max=req.query.price_max;
+  let room_min=req.query.room_min;
+  let types_of_region=req.query.types_of_region;
+  let center=req.query.center;
+  let lat=req.query.lat;
+  let lon=req.query.lon;
+  let object_id=req.query.object_id;
+  let types_of_object=req.query.types_of_object;
+  let radius=req.query.radius;
+  let per_page=req.query.per_page;
+  let page=req.query.page;
+    Immobilie.searchProperty(types_of_use,surface_min,price_max,room_min,types_of_region,center,lat,lon,object_id,types_of_object,radius,per_page,page,function(err,data){
+          if (err){
+              res.status(400).send(err);
+          }
+          else
+          {
+              res.status(200).send(data);   
+          }
+    });
+});
+
+// Search Property End
 
 module.exports = propertyRoutes;
