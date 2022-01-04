@@ -939,6 +939,11 @@ function db_add_data(new_array,new_array1,new_zip){
                   var regi_id=JSON.stringify("NULL");
                   var timestamp=JSON.stringify(new_arr1.uebertragung[0].ATTR.timestamp.toString());
 
+                  var d=timestamp.split('T')[0];
+                  var t=timestamp.match(/\d\d:\d\d:\d\d/)[0];
+                  var date1=mydate.format(new Date((d)),'YYYY-MM-DD');
+                  var timestamp1=date1 +' ' + t; 
+
 
                   // general fields
 
@@ -957,7 +962,7 @@ function db_add_data(new_array,new_array1,new_zip){
                         else   
                           var anbieter_id=res1.insertId;
                         
-                        dbConn.query("INSERT INTO openimmos(anbieter_id,art,umfang,modus,version,sendersoftware,senderversion,techn_email,regi_id,timestamp,user_defined_anyfield,user_defined_simplefield,created_at,updated_at)VALUES('"+anbieter_id+"','"+art+"','"+umfang+"','"+modus+"','"+version+"','"+sendersoftware+"','"+senderversion+"','"+techn_email+"','"+regi_id+"','"+timestamp+"','"+user_defined_anyfield+"','"+user_defined_simplefield+"','"+created_at+"','"+created_at+"')",(err,res2)=>{
+                        dbConn.query("INSERT INTO openimmos(anbieter_id,art,umfang,modus,version,sendersoftware,senderversion,techn_email,regi_id,timestamp,user_defined_anyfield,user_defined_simplefield,created_at,updated_at)VALUES('"+anbieter_id+"','"+art+"','"+umfang+"','"+modus+"','"+version+"','"+sendersoftware+"','"+senderversion+"','"+techn_email+"','"+regi_id+"','"+timestamp1+"','"+user_defined_anyfield+"','"+user_defined_simplefield+"','"+created_at+"','"+created_at+"')",(err,res2)=>{
                           if(err)
                             console.log(err);
                           else
