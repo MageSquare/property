@@ -1,6 +1,7 @@
 const express=require('express');
 const Immobilie = require('../models/immobilies.model');
 const Providers = require('../models/providers.model');
+const ImmobilieEvaluate = require('../models/immobilieevaluate.model');
 const dbConn = require('../../config/db.config');
 const propertyRoutes = express.Router();
 var jwt = require('jsonwebtoken');
@@ -76,9 +77,18 @@ const upload = multer({ storage: storage }).single("demo_zip");
 // Get list of all properties by folder by POST method
   propertyRoutes.route('/properties').post(function(req,res){
       let provider_id = req.body.value;
-      let pageSize = req.body.per_page;
-      let curr_page = req.body.curr_page;
-
+      if(req.body.per_page){
+          pageSize = req.body.per_page;
+      }
+      else{
+          pageSize = 10;
+      }
+      if(req.body.curr_page){
+          curr_page = req.body.curr_page;
+      }
+      else{
+          curr_page = 1;
+      }
           Immobilie.getProperties(provider_id,pageSize,curr_page,function(err, data) {    
               if (err){
                   res.status(400).send(err);
@@ -108,12 +118,24 @@ const upload = multer({ storage: storage }).single("demo_zip");
   });
 // Delete created property
 
-
 // Get list of all verkauft properties
   propertyRoutes.route('/verkauft-properties').get(function(req,res){
+
       let provider_id = req.query.provider_id;
-      let pageSize = req.query.per_page;
-      let curr_page = req.query.curr_page;
+
+      if(req.query.per_page){
+          pageSize = req.query.per_page;
+      }
+      else{
+          pageSize = 10;
+      }
+      if(req.query.curr_page){
+          curr_page = req.query.curr_page;
+      }
+      else{
+          curr_page = 1;
+      }
+
       Immobilie.verkauftProperties(provider_id,pageSize,curr_page,function(err, data) {    
           if (err){
               res.status(400).send(err);
@@ -126,7 +148,6 @@ const upload = multer({ storage: storage }).single("demo_zip");
 
   });
 // Get list of all verkauft properties
-
 
 // Login
   propertyRoutes.route('/login'
@@ -416,5 +437,22 @@ propertyRoutes.route('/properties-search').get(function(req,res){
 });
 
 // Search Property End
+
+// Delete created evalution
+  propertyRoutes.route('/delete_my_created_evaluation').delete(function(req,res){
+      const id = req.query.id;
+      ImmobilieEvaluate.deleteCreatedEvalution(id,function(err, data) {    
+          if (err){
+              res.status(400).send(err);
+          }
+          else
+          {
+              res.status(200).send(data);
+          }
+      });
+
+  });
+// Delete created evalution
+
 
 module.exports = propertyRoutes;

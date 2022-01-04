@@ -83,22 +83,8 @@ var Immobilie = function(immobilie){
           }
 
           let offset = (curr_page-1)*per_page;
-
           var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc';
-          if(!per_page && curr_page){
-            var sql =sql_query+' offset '+ offset +'';  
-          }  
-          else if(per_page && !curr_page){
-            var sql =sql_query+' limit '+ per_page+' ';
-          }
-          
-          else if(!per_page && !curr_page){
-            var sql =sql_query;
-          }
-          else if(per_page && curr_page){
-            var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
-          }
-
+          var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
           dbConn.query(sql, function (err, data) {
               if (err) {
                 let error = new Object();
@@ -206,7 +192,6 @@ var Immobilie = function(immobilie){
     }
 // Delete created property
 
-
 // Get list of all verkauft properties
     Immobilie.verkauftProperties = function(provider_id,per_page,curr_page,result){
             let pid;
@@ -228,19 +213,7 @@ var Immobilie = function(immobilie){
             let offset = (curr_page-1)*per_page;
             
             var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc";
-            if(!per_page && curr_page){
-              var sql=sql_query+" offset "+ offset +"";
-            }  
-            else if(per_page && !curr_page){
-              var sql=sql_query+" limit "+ per_page +" ";
-            }
-            
-            else if(!per_page && !curr_page){
-              var sql=sql_query;
-            }
-            else if(per_page && curr_page){
-              var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
-            }
+            var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
 
             dbConn.query(sql, function (err, data) {
                 if (err) {
@@ -248,15 +221,7 @@ var Immobilie = function(immobilie){
                     error['message']='Something went wrong!';
                     result(error, null);
                 } else {
-
-                  if(data.length>0){
                     result(null,data);
-                  }
-                  else{
-                    let error = new Object();
-                    error['message']='Data not found!';
-                    result(error, null);
-                  }
                 }
             });
     }
