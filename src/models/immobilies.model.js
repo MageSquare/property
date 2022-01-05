@@ -885,7 +885,7 @@ function db_add_data(new_array,new_array1,new_zip){
 
                   var pre_preise=JSON.stringify(new_arr1.anbieter[0].immobilie[0].preise);
                   var preise=pre_preise.replace(/\\/g, '&nbsp;');
-
+  
                   var bieterverfahren=null;
                   var versteigerung={};
                   var bieterverfahren=JSON.stringify(new_arr1.anbieter[0].immobilie[0].bieterverfahren);
