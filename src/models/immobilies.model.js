@@ -5,6 +5,8 @@ const extract = require('extract-zip');  //Module TO Extract Zip Files
 const path = require('path');            //Module To Get Root Path
 const xml2js = require('xml2js');        //Module To Convert Xml Data To JSON
 const parser = new xml2js.Parser({ attrkey: "ATTR" });   
+const mydate = require('date-and-time');
+const xmlParser  = require('xml2json');
 
 var Immobilie = function(immobilie){
     this.openimmo_obid                = immobilie.openimmo_obid;
@@ -83,22 +85,8 @@ var Immobilie = function(immobilie){
           }
 
           let offset = (curr_page-1)*per_page;
-
-          var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc';
-          if(!per_page && curr_page){
-            var sql =sql_query+' offset '+ offset +'';  
-          }  
-          else if(per_page && !curr_page){
-            var sql =sql_query+' limit '+ per_page+' ';
-          }
-          
-          else if(!per_page && !curr_page){
-            var sql =sql_query;
-          }
-          else if(per_page && curr_page){
-            var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
-          }
-
+          var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.id desc';
+          var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
           dbConn.query(sql, function (err, data) {
               if (err) {
                 let error = new Object();
@@ -206,7 +194,6 @@ var Immobilie = function(immobilie){
     }
 // Delete created property
 
-
 // Get list of all verkauft properties
     Immobilie.verkauftProperties = function(provider_id,per_page,curr_page,result){
             let pid;
@@ -227,20 +214,8 @@ var Immobilie = function(immobilie){
 
             let offset = (curr_page-1)*per_page;
             
-            var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc";
-            if(!per_page && curr_page){
-              var sql=sql_query+" offset "+ offset +"";
-            }  
-            else if(per_page && !curr_page){
-              var sql=sql_query+" limit "+ per_page +" ";
-            }
-            
-            else if(!per_page && !curr_page){
-              var sql=sql_query;
-            }
-            else if(per_page && curr_page){
-              var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
-            }
+            var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.id desc";
+            var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
 
             dbConn.query(sql, function (err, data) {
                 if (err) {
@@ -248,15 +223,7 @@ var Immobilie = function(immobilie){
                     error['message']='Something went wrong!';
                     result(error, null);
                 } else {
-
-                  if(data.length>0){
                     result(null,data);
-                  }
-                  else{
-                    let error = new Object();
-                    error['message']='Data not found!';
-                    result(error, null);
-                  }
                 }
             });
     }
@@ -324,15 +291,15 @@ var Immobilie = function(immobilie){
 // Custom method to display all property start
     Immobilie.getAllProperty = function(per_page,page,result){  
       if(!per_page && !page)
-          var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc';
+          var sql='select * from `immobilies`  where  `immobilies`.`deleted_at` is null order by `id` desc';
         else{
           var offset = (per_page * (page - 1));
-          var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+offset;
+          var sql='select * from `immobilies`  where  `immobilies`.`deleted_at` is null order by `id` desc  limit '+per_page+' offset '+offset;
           dbConn.query(sql,function (err, res) {
             if(err) 
               result(null,err);
             else{
-               var total_count_q = "select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc";
+               var total_count_q = "select * from `immobilies`  where  `immobilies`.`deleted_at` is null order by `id` desc";
                dbConn.query(total_count_q,function (err,ress){
                     var totalPage=0;
                     if(!page && !page){
@@ -344,6 +311,10 @@ var Immobilie = function(immobilie){
                             totalPage = 0;
                         }
                     }
+                    // console.log(res);
+                    // res.forEach((item)=>{
+                    //     console.log(item.freitexte);
+                    // });
                   var data = new Object();
                   data['data'] = res;
                   data['page'] = page;
@@ -585,8 +556,8 @@ function read_xml(new_array){
           var zip_folder_proid=new_array[i].substring(0,5);
           var final=dir+zip_folder_proid+"/"+zip_folder+"/"+new_array[i];
           var finalpath=path2+"/"+final;
+          try{
           let xml_string= fs.readFileSync(finalpath,'utf8');    //read xml file
-         
           parser.parseString(xml_string,function(err, result){    //parse xml fle data to json
             try{
                if(err) {
@@ -600,6 +571,19 @@ function read_xml(new_array){
                 console.log(err);
             }
           });
+          }catch(error){
+              console.log(error)
+          }
+         // try{
+         //     let data = xmlParser.toJson(xml_string);
+         //     latest_xml.push(data);  
+         //     // console.log("563",data);
+         //    resolve(latest_xml);
+         // }catch(err){
+         //     console.log(err)
+         // }
+          
+          
         
        }
         resolve(latest_xml);
@@ -658,6 +642,7 @@ function db_check_openimmo_obid(new_array1){
       });
   });
 }
+ 
  
 //Check openimmo_obid is available in db or not and based on that decide whether to add or delete property end
 
@@ -1003,6 +988,7 @@ function db_add_data(new_array,new_array1,new_zip){
    });
 }
 
+
 //Add Property into db which is not available in db end 
 
  //Read Folder start    
@@ -1039,6 +1025,56 @@ function checkFileExist(files){
 
 // Hiteshree Custom method to display Import Api End
 
+//Toggle Publish property
+Immobilie.togglepublish = function(id){
+  var date = new Date();
+  var dd = String(date.getDate()).padStart(2, '0');
+  var mm = String(date.getMonth() + 1).padStart(2, '0');
+  var yyyy = date.getFullYear();
+  let h = date.getHours();
+  let m = date.getMinutes();
+  let s = date.getSeconds();
+
+  
+  date = yyyy + ':' + mm + ':' + dd + ' ' + h+ ':' + m +':' + s;
+  
+  var sql = 'select *  from `immobilies` where id = '+id;
+    dbConn.query(sql, function (err, result) {
+      // if(err){
+      //   res.send(err);
+      // }else{
+          var data =result[0].deleted_at;
+        
+          if(data !== null && data !== '0000-00-00 00:00:00'){
+           var sql_up= 'update `immobilies` set deleted_at= "NULL" where id ='+id 
+           dbConn.query(sql_up, function (err, result) {
+            if(err){
+              res.status(503).send(err);
+            }else{
+                // res.status(200).json({msg:"property unpublish successfully !"});
+                console.log("property unpublish successfully !");
+            }
+            
+          });
+        }
+        else{
+          var sql_up_2= 'update `immobilies` set deleted_at="'+ date +'" where id ='+id 
+          dbConn.query(sql_up_2, function (err, result) {
+            if(err){
+              res.status(503).send(err);
+            }else{
+              // res.status(200).json({msg:" property published successfully !"}); 
+              console.log("property published successfully !");
+            }
+            
+          });
+          }
+
+      // }
+});
+}
+
+//Toggle Publish property
 
 // Hiteshree Custom method to display Single Import Api Start
 
@@ -1136,7 +1172,7 @@ Immobilie.SingleimportProperty = function (myfile,result) {
                               }
                         }); 
                       } 
-                  },1000);
+                  },99990);
 
             });
         }
@@ -1158,7 +1194,7 @@ Immobilie.SingleimportProperty = function (myfile,result) {
 
 Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,types_of_region,center,lat,lon,object_id,types_of_object,radius,per_page,page,result){
   
-  let sql="select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where";
+  let sql="select immobilies.* from `immobilies` where";
   
   if(!types_of_use)     
     types_of_use =0;   
@@ -1227,12 +1263,12 @@ Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,
         }
         
         if(!per_page && !page){
-              sql=sql+"and `immobilies`.`deleted_at` is null order by `created_at` desc";  
+              sql=sql+"and `immobilies`.`deleted_at` is null order by `id` desc";  
         }
         else
         {
               var offset = (per_page * (page - 1));
-              sql=sql+"and `immobilies`.`deleted_at` is null order by `created_at` desc  limit "+per_page+" offset "+offset+"";
+              sql=sql+"and `immobilies`.`deleted_at` is null order by `id` desc  limit "+per_page+" offset "+offset+"";
         }
         dbConn.query(sql,function(err,res){
           if(res)
@@ -1249,12 +1285,12 @@ Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,
   { 
     if(object_id!=null){
       if(!per_page && !page){
-          var sql_object="select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `created_at` desc";
+          var sql_object="select immobilies.* from `immobilies` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `id` desc";
         }
         else
         {
           var offset = (per_page * (page - 1));
-          var sql_object="select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `created_at` desc  limit "+per_page+" offset "+offset+"";
+          var sql_object="select immobilies.*  from `immobilies` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `id` desc  limit "+per_page+" offset "+offset+"";
         }
       dbConn.query(sql_object,function(err,res){
           if(res)
@@ -1306,7 +1342,7 @@ Immobilie.getAllOffenProperty = function(per_page,page,id,result){
       if(pid == "00004")
       { 
               var offset = (per_page * (page - 1));
-              dbConn.query('SELECT *,`i`.`id` AS imm_id,`a`.`id` AS anb_id,`a`.`user_defined_anyfield` AS anb_user_defined_anyfield,`a`.`user_defined_simplefield` AS anb_user_defined_simplefield,`a`.`created_at` AS anb_created_at,`a`.`updated_at` AS anb_updated_at,`a`.`deleted_at` AS anb_deleted_at FROM immobilies i  left join anbieters a on a.immobilie_id = i.id where (a.anbieternr = ' + pid + ') and i.deleted_at is null order by i.created_at desc,i.id desc  limit '+per_page+' offset '+offset,async function (err,res){
+              dbConn.query('SELECT *,`i`.`id` AS imm_id,`a`.`id` AS anb_id,`a`.`user_defined_anyfield` AS anb_user_defined_anyfield,`a`.`user_defined_simplefield` AS anb_user_defined_simplefield,`a`.`created_at` AS anb_created_at,`a`.`updated_at` AS anb_updated_at,`a`.`deleted_at` AS anb_deleted_at FROM immobilies i  left join anbieters a on a.immobilie_id = i.id where (a.anbieternr = ' + pid + ') and i.deleted_at is null order by i.id desc  limit '+per_page+' offset '+offset,async function (err,res){
               if(err){
                 result(null,err); 
               } 
@@ -1319,7 +1355,7 @@ Immobilie.getAllOffenProperty = function(per_page,page,id,result){
       else  
       {
         var offset = (per_page * (page - 1));
-        var sql="select *,`immobilies`.`id` AS imm_id,`anbieters`.`id` AS anb_id,`anbieters`.`user_defined_anyfield` AS anb_user_defined_anyfield,`anbieters`.`user_defined_simplefield` AS anb_user_defined_simplefield,`anbieters`.`created_at` AS anb_created_at,`anbieters`.`updated_at` AS anb_updated_at,`anbieters`.`deleted_at` AS anb_deleted_at from `immobilies`  left join `anbieters`  on `anbieters`.`immobilie_id` = `immobilies`.`id` where (`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and (`anbieters`.`openimmo_anid` = "+pid+") and `immobilies`.`deleted_at` is null order by `immobilies`.`created_at` desc, `immobilies`.`id` desc limit "+per_page+" offset "+offset;
+        var sql="select *,`immobilies`.`id` AS imm_id,`anbieters`.`id` AS anb_id,`anbieters`.`user_defined_anyfield` AS anb_user_defined_anyfield,`anbieters`.`user_defined_simplefield` AS anb_user_defined_simplefield,`anbieters`.`created_at` AS anb_created_at,`anbieters`.`updated_at` AS anb_updated_at,`anbieters`.`deleted_at` AS anb_deleted_at from `immobilies`  left join `anbieters`  on `anbieters`.`immobilie_id` = `immobilies`.`id` where (`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and (`anbieters`.`openimmo_anid` = "+pid+") and `immobilies`.`deleted_at` is null order by  `immobilies`.`id` desc limit "+per_page+" offset "+offset;
           dbConn.query(sql,(err,res1)=>{
               if(err){
                 result(null,err); 
