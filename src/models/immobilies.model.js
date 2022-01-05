@@ -871,25 +871,49 @@ function db_add_data(new_array,new_array1,new_zip){
                   {
                       user_zustand_angaben_arr[0].user_defined_simplefield=arr;
                   }
+ 
+                   var pre_objektkategorie=JSON.stringify(user_objektkategorie_arr);
+                  var objektkategorie=pre_objektkategorie.replace(/\\/g, '&nbsp;');
+                  
+                  var pre_geo=JSON.stringify(user_geo_arr);
+                  var geo=pre_geo.replace(/\\/g, '&nbsp;');
 
-                  var objektkategorie=JSON.stringify(user_objektkategorie_arr);
-                  var geo=JSON.stringify(user_geo_arr);
-                  var kontaktperson=JSON.stringify(new_arr1.anbieter[0].immobilie[0].kontaktperson);
+                  var pre_kontaktperson=JSON.stringify(new_arr1.anbieter[0].immobilie[0].kontaktperson);
+                  var kontaktperson=pre_kontaktperson.replace(/\\/g, '&nbsp;');
+
                   var weitere_adresse=JSON.stringify([]);
-                  var preise=JSON.stringify(new_arr1.anbieter[0].immobilie[0].preise);
+
+                  var pre_preise=JSON.stringify(new_arr1.anbieter[0].immobilie[0].preise);
+                  var preise=pre_preise.replace(/\\/g, '&nbsp;');
+
                   var bieterverfahren=null;
                   var versteigerung={};
                   var bieterverfahren=JSON.stringify(new_arr1.anbieter[0].immobilie[0].bieterverfahren);
                   var versteigerung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].versteigerung);
-                  var flaechen=JSON.stringify(user_flaechen_arr);
-                  var ausstattung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].ausstattung);
-                  var zustand_angaben=JSON.stringify(user_zustand_angaben_arr);
+
+                  var pre_flaechen=JSON.stringify(user_flaechen_arr);
+                  var flaechen=pre_flaechen.replace(/\\/g, '&nbsp;');
+
+                  var pre_ausstattung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].ausstattung);
+                  var ausstattung=pre_ausstattung.replace(/\\/g, '&nbsp;');
+
+                  var pre_zustand_angaben=JSON.stringify(user_zustand_angaben_arr);
+                  var zustand_angaben=pre_zustand_angaben.replace(/\\/g, '&nbsp;');
+
                   var bewertung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].bewertung);
                   var infrastruktur=JSON.stringify(new_arr1.anbieter[0].immobilie[0].infrastruktur);
-                  var freitexte=JSON.stringify(user_freitexte_arr[0]);
-                  var anhaenge=JSON.stringify(user_anhaenge_arr);
-                  var verwaltung_objekt=JSON.stringify(new_arr1.anbieter[0].immobilie[0].verwaltung_objekt);
-                  var verwaltung_techn=JSON.stringify(user_vertech_value_arr);
+
+                  var pre_freitexte=JSON.stringify(user_freitexte_arr[0]);
+                  var freitexte=pre_freitexte.replace(/\\/g, '&nbsp;'); 
+
+                  var pre_anhaenge=JSON.stringify(user_anhaenge_arr);
+                  var anhaenge=pre_anhaenge.replace(/\\/g, '&nbsp;');
+
+                  var pre_verwaltung_objekt=JSON.stringify(new_arr1.anbieter[0].immobilie[0].verwaltung_objekt);
+                  var verwaltung_objekt=pre_verwaltung_objekt.replace(/\\/g, '&nbsp;');
+
+                  var pre_verwaltung_techn=JSON.stringify(user_vertech_value_arr);
+                  var verwaltung_techn=pre_verwaltung_techn.replace(/\\/g, '&nbsp;');
                   var update_time=new Date();
                   var top_directory=top;
                   var directory=my_dir;
