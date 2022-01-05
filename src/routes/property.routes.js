@@ -454,5 +454,25 @@ propertyRoutes.route('/properties-search').get(function(req,res){
   });
 // Delete created evalution
 
+// Search Property End
+
+// Get Offen Properties Start
+propertyRoutes.route('/offen-properties').get(function (req,res){
+  let per_page=req.query.per_page;
+  let page=req.query.page;
+  
+        Immobilie.getAllOffenProperty(per_page,page,req.query.provider_id,function(err, immobilie){
+          if (err){
+              res.status(400).send("No Data found");
+          }
+          else
+          {
+                res.status(200).send(immobilie);
+          }
+        });
+});
+
+// Get Offen Properties End
+
 
 module.exports = propertyRoutes;

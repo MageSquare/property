@@ -1315,4 +1315,59 @@ Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,
 
 // search property end
 
+// Custom method to display all offen property start
+
+Immobilie.getAllOffenProperty = function(per_page,page,id,result){
+
+
+  let pid;
+  let obj_tmp,obj_tmp1,obj_tmp2;
+  let i;
+    if(id < 10){
+      pid = '0000'+id;
+    } 
+
+    else if(id< 100){
+       pid = '000'+id;  
+    }
+
+    else if(id < 1000){
+       pid = '00'+id;
+    } 
+
+    else if(id < 10000){
+       pid = '0'+id;
+    } 
+
+      if(pid == "00004")
+      { 
+              var offset = (per_page * (page - 1));
+              dbConn.query('SELECT *,`i`.`id` AS imm_id,`a`.`id` AS anb_id,`a`.`user_defined_anyfield` AS anb_user_defined_anyfield,`a`.`user_defined_simplefield` AS anb_user_defined_simplefield,`a`.`created_at` AS anb_created_at,`a`.`updated_at` AS anb_updated_at,`a`.`deleted_at` AS anb_deleted_at FROM immobilies i  left join anbieters a on a.immobilie_id = i.id where (a.anbieternr = ' + pid + ') and i.deleted_at is null order by i.created_at desc,i.id desc  limit '+per_page+' offset '+offset,async function (err,res){
+              if(err){
+                result(null,err); 
+              } 
+              else
+              {  
+                  result(null,res);  
+              }
+           });
+      }         
+      else  
+      {
+        var offset = (per_page * (page - 1));
+        var sql="select *,`immobilies`.`id` AS imm_id,`anbieters`.`id` AS anb_id,`anbieters`.`user_defined_anyfield` AS anb_user_defined_anyfield,`anbieters`.`user_defined_simplefield` AS anb_user_defined_simplefield,`anbieters`.`created_at` AS anb_created_at,`anbieters`.`updated_at` AS anb_updated_at,`anbieters`.`deleted_at` AS anb_deleted_at from `immobilies`  left join `anbieters`  on `anbieters`.`immobilie_id` = `immobilies`.`id` where (`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and (`anbieters`.`openimmo_anid` = "+pid+") and `immobilies`.`deleted_at` is null order by `immobilies`.`created_at` desc, `immobilies`.`id` desc limit "+per_page+" offset "+offset;
+          dbConn.query(sql,(err,res1)=>{
+              if(err){
+                result(null,err); 
+              } 
+              else
+              {
+                result(null,res1); 
+              }
+              
+          }); 
+      }
+}
+// Custom method to display all offen property end
+
 module.exports = Immobilie;
