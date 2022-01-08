@@ -5,6 +5,8 @@ const extract = require('extract-zip');  //Module TO Extract Zip Files
 const path = require('path');            //Module To Get Root Path
 const xml2js = require('xml2js');        //Module To Convert Xml Data To JSON
 const parser = new xml2js.Parser({ attrkey: "ATTR" });   
+const mydate = require('date-and-time');
+const xmlParser  = require('xml2json');
 
 var Immobilie = function(immobilie){
     this.openimmo_obid                = immobilie.openimmo_obid;
@@ -83,7 +85,7 @@ var Immobilie = function(immobilie){
           }
 
           let offset = (curr_page-1)*per_page;
-          var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.created_at desc, i.id desc';
+          var sql_query = 'select * from immobilies i left join anbieters a on a.immobilie_id = i.id where a.openimmo_anid in ('+prov_ids+') and i.deleted_at is null order by i.id desc';
           var sql =sql_query+' limit '+ per_page +' offset '+ offset +' ';
           dbConn.query(sql, function (err, data) {
               if (err) {
@@ -212,7 +214,7 @@ var Immobilie = function(immobilie){
 
             let offset = (curr_page-1)*per_page;
             
-            var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.created_at desc, i.id desc";
+            var sql_query = "select * from immobilies i left join anbieters a on a.immobilie_id = i.id where json_unquote(json_extract(`zustand_angaben`, '$.verkaufstatus.stand')) = 'VERKAUFT' and a.openimmo_anid = "+pid+" and i.deleted_at is null order by i.id desc";
             var sql=sql_query+" limit "+ per_page +" offset "+ offset +" ";
 
             dbConn.query(sql, function (err, data) {
@@ -263,17 +265,20 @@ var Immobilie = function(immobilie){
                                 result(error,null);
                               }
                               else
-                              {
+                              { 
+                                // let m=obj_tmp[0]['freitexte'];
+                                // let object=JSON.parse(m);
+                                // let object_title=object.objekttitel;
                                 result(null,obj_tmp[0]);
                               }
 
                         }
                         else
                         {
-                          result(null, "Not found");  
+                          result(null, "Not found");    
                         }
                                   
-                         
+                          
                       }
                     });
                    
@@ -289,15 +294,15 @@ var Immobilie = function(immobilie){
 // Custom method to display all property start
     Immobilie.getAllProperty = function(per_page,page,result){  
       if(!per_page && !page)
-          var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc';
+          var sql='select * from `immobilies`  where  `immobilies`.`deleted_at` is null order by `id` desc';
         else{
           var offset = (per_page * (page - 1));
-          var sql='select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc  limit '+per_page+' offset '+offset;
+          var sql='select * from `immobilies`  where  `immobilies`.`deleted_at` is null order by `id` desc  limit '+per_page+' offset '+offset;
           dbConn.query(sql,function (err, res) {
             if(err) 
               result(null,err);
             else{
-               var total_count_q = "select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where  `immobilies`.`deleted_at` is null order by `created_at` desc";
+               var total_count_q = "select * from `immobilies`  where  `immobilies`.`deleted_at` is null order by `id` desc";
                dbConn.query(total_count_q,function (err,ress){
                     var totalPage=0;
                     if(!page && !page){
@@ -309,6 +314,10 @@ var Immobilie = function(immobilie){
                             totalPage = 0;
                         }
                     }
+                    // console.log(res);
+                    // res.forEach((item)=>{
+                    //     console.log(item.freitexte);
+                    // });
                   var data = new Object();
                   data['data'] = res;
                   data['page'] = page;
@@ -373,12 +382,14 @@ var Immobilie = function(immobilie){
 // Main function start
 
     Immobilie.importProperty =   function(result){
+     
       var rootfolders = readFolder('openimmo/');
       var files = [];     //Store All Files
       var exist_zip =[];  //Store Exists Zip names
       var new_zip =[];    //Store New zip names
-      var new_array =[];
-      var new_array1 =[];       
+      var xml_array =[];   //Store XML file list
+      var xml_readdata =[]; //Store Result of XML to xml_readdata array
+      var openimmo_obid_arr=[]; //Store openimmo_obid(read from xml file)
       var res1;
 
           // Get Zip files from root(source) folders start
@@ -416,27 +427,36 @@ var Immobilie = function(immobilie){
           
             if(new_zip.length>0){       //If new_zip contains any one zip(>0)
 
-                 var add_arr=[],del_arr=[];   //Add and Del Array to Store propery which are to be added and deleted
+                 var add_arr=[],del_arr=[];   //Add and Del Array to Store property which are to be added and deleted
                  
                  var make_zipfolders_xmlfiles=  make_zipfolder_xmlfile(rootfolders,new_zip);  //make zip folders and extract zip files
                 
-                 make_zipfolders_xmlfiles.then((data)=>{ 
+                 make_zipfolders_xmlfiles.then((data)=>{       
             
-                      new_array=data;                 //If result returns store data to new_array
+                      xml_array=data;                 //If result returns, store data to xml_array
 
                       setTimeout(()=>{                //Set time that executes read_xml and other code after specified time of extraction completion 
 
-                          var readxml= read_xml(new_array);   //To Read Xml Data
+                          var readxml= read_xml(xml_array);   //To Read Xml Data
+                          
                           readxml.then((data)=>{
-                              new_array1=data;            //Store result of XML to new_array1
+                              xml_readdata=data;            //Store result of XML to xml_readdata array
+                              
+                              xml_readdata.forEach(xmlread_arr=>{
+                                 
+                                  const jp = JSON.parse(xmlread_arr);  
+                                  var openimmo_obid=jp['openimmo']['anbieter']['immobilie']['verwaltung_techn']['openimmo_obid'];
 
-                              var check_openimmo_obid= db_check_openimmo_obid(new_array1);  //check openimmo_obid available in db or not
+                                  openimmo_obid_arr.push(openimmo_obid);    //push openimmo_obid into openimmo_obid_arr array  
+                              }); 
 
+                              var check_openimmo_obid= db_check_openimmo_obid(openimmo_obid_arr);  //check openimmo_obid available in db or not
+ 
                               check_openimmo_obid.then((data)=>{        //If openimmo_obid is there then add and delete data
                     
                                   var delete_data = db_delete_data(data['del_arr']);    //To Delete data from db
 
-                                  var add_data = db_add_data(new_array,new_array1,new_zip);   //To add data into db
+                                  var add_data = db_add_data(xml_array,xml_readdata,new_zip);   //To add data into db
                                   
                                   var final_object={
                                       "exists_file":exist_zip,
@@ -535,7 +555,7 @@ function myextract(source,path2,zip_path,zip_folder) {
 
 //Read Data from xml file start
 
-function read_xml(new_array){
+function read_xml(xml_array){
   
   var latest_xml =[];
 
@@ -544,56 +564,41 @@ function read_xml(new_array){
     var path2 = root.replace(/\\/g, "/");  
     var dir="unzip/";  
  
-    for(var i=0;i<new_array.length;i++){  //new_array contains total properties to be read
+    for(var i=0;i<xml_array.length;i++){  //xml_array contains total properties to be read
               
-          var zip_folder=new_array[i].substring(0,new_array[i].length -4);  
-          var zip_folder_proid=new_array[i].substring(0,5);
-          var final=dir+zip_folder_proid+"/"+zip_folder+"/"+new_array[i];
+          var zip_folder=xml_array[i].substring(0,xml_array[i].length -4);  
+          var zip_folder_proid=xml_array[i].substring(0,5);
+          var final=dir+zip_folder_proid+"/"+zip_folder+"/"+xml_array[i];
           var finalpath=path2+"/"+final;
           let xml_string= fs.readFileSync(finalpath,'utf8');    //read xml file
-         
-          parser.parseString(xml_string,function(err, result){    //parse xml fle data to json
-            try{
-               if(err) {
-                  console.log(err);
-                }
-                else {  
-                  latest_xml.push(result);  
-                }
-            }
-            catch(err){
-                console.log(err);
-            }
-          });
-        
+           try{
+             let data = xmlParser.toJson(xml_string);  //parse xml fle data to json
+             latest_xml.push(data);  
+             resolve(latest_xml);
+         }catch(err){
+             console.log(err)
+         }
        }
         resolve(latest_xml);
     });
-}
+}  
 
 //Read Data from xml file end
 
 //Check openimmo_obid is available in db or not and based on that decide whether to add or delete property start
 
-function db_check_openimmo_obid(new_array1){
+function db_check_openimmo_obid(xml_openimmo_obid){
 
-  var myar=[];
   var add_arr =[];
   var del_arr =[];
   var flag=0;
   var obj;
-  var add_len,new_array1_len;
+  var add_len,xml_openimmo_obid_len;
   
   return new Promise((resolve,reject)=>{
 
-    new_array1.forEach(new_arr=>{
-        myar.push(new_arr.openimmo);    //push main openimmo into one array
-    });
-      
-
-    myar.forEach(new_arr1=>{      //foreach openimmo's array
-  
-        var openimmo_obid=new_arr1.anbieter[0].immobilie[0].verwaltung_techn[0].openimmo_obid.toString();   //get openimmo_obid
+    xml_openimmo_obid.forEach(openimmo_obid=>{      //foreach openimmo_obid's array
+       
   
          dbConn.query('SELECT * FROM immobilies i  where i.openimmo_obid like?','%'+ openimmo_obid + '%' ,async function(err,res){  //check if id is available in db or not
             if(err){
@@ -601,7 +606,7 @@ function db_check_openimmo_obid(new_array1){
             }
             else 
             {        
-                if(typeof res[0]!="undefined")          //if result is not undefined
+                if(typeof res!="undefined")          //if result is not undefined
                 {                                                //then
                     del_arr.push(openimmo_obid);           //push to delete array
                 }                                                //otherwise
@@ -609,11 +614,11 @@ function db_check_openimmo_obid(new_array1){
             }        
              
                add_len=add_arr.length;
-               new_array1_len=new_array1.length;
+               xml_openimmo_obid_len=xml_openimmo_obid.length;
             
-                if(add_len==new_array1_len)
+                if(add_len==xml_openimmo_obid_len)
                 {
-                    obj={                                //resolve object when length of add and new_array is become same
+                    obj={                                //resolve object when length of add and xml_openimmo_obid is become same
                       "add_arr":add_arr,
                       "del_arr":del_arr
                     }    
@@ -625,7 +630,6 @@ function db_check_openimmo_obid(new_array1){
 }
  
 //Check openimmo_obid is available in db or not and based on that decide whether to add or delete property end
-
 
 //Delete property from db which is already available start 
 
@@ -665,196 +669,208 @@ function db_delete_data(del_data){
       });
    });
 });
-}
+}  
 
 //Delete property from db which is already available end
 
 //Add Property into db which is not available in db start
 
-function db_add_data(new_array,new_array1,new_zip){
-
-  var myar=[];
+function db_add_data(xml_array,xml_readdata,new_zip){
     
    return new Promise((resolve,reject)=>{
-      new_array1.forEach(new_arr=>{          
-        myar.push(new_arr.openimmo);
-      });
      
       var dir=0;
-       myar.forEach(new_arr1=>{
+       xml_readdata.forEach(xmlread_arr=>{
                   
-                  var my_dir=new_array[dir].substring(0,new_array[dir].length -4);
-                  var top=new_array[dir].substring(0,5);
+                  var my_dir=xml_array[dir].substring(0,xml_array[dir].length -4);
+                  var top=xml_array[dir].substring(0,5);
 
                   var zipfilename=new_zip[dir];
             
-                  var openimmo_obid=new_arr1.anbieter[0].immobilie[0].verwaltung_techn[0].openimmo_obid.toString();
+                  const jp = JSON.parse(xmlread_arr); //Parse json data
+                  var openimmo_obid=jp['openimmo']['anbieter']['immobilie']['verwaltung_techn']['openimmo_obid'];
 
-                  // immobilies table
+                  // immobilies table 
 
                   // 1...freitexte field
 
-                  var user_freitexte_objekttitel=JSON.stringify(new_arr1.anbieter[0].immobilie[0].freitexte[0].objekttitel);
-                  var user_freitexte_ausstatt_beschr=JSON.stringify(new_arr1.anbieter[0].immobilie[0].freitexte[0].ausstatt_beschr.toString());
-                  var user_freitexte_lage=JSON.stringify(new_arr1.anbieter[0].immobilie[0].freitexte[0].lage.toString());
-                  var freitexte=JSON.stringify(new_arr1.anbieter[0].immobilie[0].freitexte);
-                  var user_freitexte_arr=JSON.parse(freitexte);
-                  var arr="[]";
+                  var user_freitexte_objekttitel=jp['openimmo']['anbieter']['immobilie']['freitexte']['objekttitel'];
+                  var user_freitexte_ausstatt_beschr=jp['openimmo']['anbieter']['immobilie']['freitexte']['ausstatt_beschr'];
+                  var user_freitexte_lage=jp['openimmo']['anbieter']['immobilie']['freitexte']['lage'];
+                  var freitexte=jp['openimmo']['anbieter']['immobilie']['freitexte'];
+                  var user_freitexte_arr=freitexte;
+                  var obj_null="{}";   
 
                   if(typeof user_freitexte_objekttitel == "undefined")
                   {
-                      user_freitexte_arr[0].objekttitel=arr;
+                      user_freitexte_arr['objekttitel']=obj_null;
                   }
                   if(typeof user_freitexte_ausstatt_beschr == "undefined")
                   {
-                      user_freitexte_arr[0].ausstatt_beschr=arr;
+                      user_freitexte_arr['ausstatt_beschr']=obj_null;
                   }
                   if(typeof user_freitexte_lage == "undefined")
                   {
-                      user_freitexte_arr[0].lage=arr;  
+                      user_freitexte_arr['lage']=obj_null;   
                   }
                 
 
                   // 2...geo field
 
-                  var user_geo_ort=JSON.stringify(new_arr1.anbieter[0].immobilie[0].geo[0].ort.toString());
-                  var user_geo_plz=JSON.stringify(new_arr1.anbieter[0].immobilie[0].geo[0].plz.toString());
-                  var geo=JSON.stringify(new_arr1.anbieter[0].immobilie[0].geo[0]);
-                  var user_geo_arr=JSON.parse(geo);
+                  var user_geo_ort=jp['openimmo']['anbieter']['immobilie']['geo']['ort'];
+                  var user_geo_plz=jp['openimmo']['anbieter']['immobilie']['geo']['plz'];
+                  var geo=jp['openimmo']['anbieter']['immobilie']['geo'];
+                  var user_geo_arr=geo;
 
                   if(typeof user_geo_ort == "undefined")
                   {
-                      user_geo_arr[0].ort=arr;
+                      user_geo_arr['ort']=obj_null;
                   }
                   if(typeof user_geo_plz == "undefined")
                   {
-                      user_geo_arr[0].plz=arr;
+                      user_geo_arr['plz']=obj_null;
                   }
 
                   
                   // 3...flaechen field
 
-                  var user_flaechen_wohnflaeche=JSON.stringify(new_arr1.anbieter[0].immobilie[0].flaechen[0].wohnflaeche);
-                  var user_flaechen_anzahl_zimmer=JSON.stringify(new_arr1.anbieter[0].immobilie[0].flaechen[0].anzahl_zimmer);
-                  var user_flaechen_grundstuecksflaeche=JSON.stringify(new_arr1.anbieter[0].immobilie[0].flaechen[0].grundstuecksflaeche);
-                  var flaechen=JSON.stringify(new_arr1.anbieter[0].immobilie[0].flaechen[0]);
-                  var user_flaechen_arr=JSON.parse(flaechen);
+                  var user_flaechen_wohnflaeche=jp['openimmo']['anbieter']['immobilie']['flaechen']['wohnflaeche'];
+                  var user_flaechen_anzahl_zimmer=jp['openimmo']['anbieter']['immobilie']['flaechen']['anzahl_zimmer'];
+                  var user_flaechen_grundstuecksflaeche=jp['openimmo']['anbieter']['immobilie']['flaechen']['grundstuecksflaeche'];
+                  var flaechen=jp['openimmo']['anbieter']['immobilie']['flaechen'];
+                  var user_flaechen_arr=flaechen;
 
                   if(typeof user_flaechen_wohnflaeche == "undefined")
                   {
-                      user_flaechen_arr.wohnflaeche=arr;
+                      user_flaechen_arr['wohnflaeche']=obj_null;
                   }
                   if(typeof user_flaechen_anzahl_zimmer == "undefined")
                   {
-                      user_flaechen_arr.anzahl_zimmer=arr;
+                      user_flaechen_arr['anzahl_zimmer']=obj_null;
                   }
                   if(typeof user_flaechen_grundstuecksflaeche == "undefined")
                   {
-                      user_flaechen_arr.grundstuecksflaeche=arr;
+                      user_flaechen_arr['grundstuecksflaeche']=obj_null;
                   }
                   
                   // 4...verwaltung_techn field
 
-                  var user_vertech_value=JSON.stringify(new_arr1.anbieter[0].immobilie[0].verwaltung_techn[0]);
-                  var user_vertech_value_arr=JSON.parse(user_vertech_value);
+                  var user_vertech_value=jp['openimmo']['anbieter']['immobilie']['verwaltung_techn'];
+                  var user_vertech_value_arr=user_vertech_value;
 
                   if(typeof user_vertech_value == "undefined")
                   {
-                      user_vertech_value_arr.verwaltung_techn=arr;
+                      user_vertech_value_arr['verwaltung_techn']=obj_null;
                   }
                   
                   // 5...anhaenge field
 
-                  var user_anhaenge_anhang=JSON.stringify(new_arr1.anbieter[0].immobilie[0].anhaenge[0].anhaenge);
-                  var user_anhaenge_daten_pfad=JSON.stringify(new_arr1.anbieter[0].immobilie[0].anhaenge[0].pfad);
-                  var user_anhaenge=JSON.stringify(new_arr1.anbieter[0].immobilie[0].anhaenge);
-                  var user_anhaenge_arr=JSON.parse(user_anhaenge);
+                  var user_anhaenge_anhang=jp['openimmo']['anbieter']['immobilie']['anhaenge']['anhaenge'];
+                  var user_anhaenge_daten_pfad=jp['openimmo']['anbieter']['immobilie']['anhaenge']['pfad'];
+                  var user_anhaenge=jp['openimmo']['anbieter']['immobilie']['anhaenge'];
+                  var user_anhaenge_arr=user_anhaenge;
 
                   if(typeof user_anhaenge_anhang == "undefined")
                   {
-                      user_anhaenge_arr.anhaenge=arr;
+                      user_anhaenge_arr['anhaenge']=obj_null;
                   }
                   if(typeof user_anhaenge_daten_pfad == "undefined")
                   {
-                      user_anhaenge_arr.pfad=arr;
+                      user_anhaenge_arr['pfad']=obj_null;
                   }
                   
                   // 6...objektkategorie field
 
-                  var user_objektkategorie_nutzungsart=JSON.stringify(new_arr1.anbieter[0].immobilie[0].objektkategorie[0].nutzungsart);
-                  var user_objektkategorie_objektart=JSON.stringify(new_arr1.anbieter[0].immobilie[0].objektkategorie[0].objektart);
-                  var user_objektkategorie=JSON.stringify(new_arr1.anbieter[0].immobilie[0].objektkategorie[0]);
-                  var user_objektkategorie_arr=JSON.parse(user_objektkategorie);
+                  var user_objektkategorie_nutzungsart=jp['openimmo']['anbieter']['immobilie']['objektkategorie']['nutzungsart'];
+                  var user_objektkategorie_objektart=jp['openimmo']['anbieter']['immobilie']['objektkategorie']['objektart'];
+                  var user_objektkategorie=jp['openimmo']['anbieter']['immobilie']['objektkategorie'];
+                  var user_objektkategorie_arr=user_objektkategorie;
+                 
           
                   if(typeof user_objektkategorie_nutzungsart == "undefined")
                   {
-                      user_objektkategorie_arr.nutzungsart=arr;
+                      user_objektkategorie_arr['nutzungsart']=obj_null;
                   }
                   if(typeof user_objektkategorie_objektart == "undefined")
                   {
-                      user_objektkategorie_arr.objektart=arr;
+                      user_objektkategorie_arr['objektart']=obj_null;
                   }
                   
 
                   // 7...zustand_angaben field
 
-                  var user_zustand_angaben_baujahr=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].baujahr);
-                  var user_zustand_angaben_energiepass=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].energiepass);
-                  var user_zustand_angaben_energiepass_gueltig_bis=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].energiepass[0].gueltig_bis);
-                  var user_zustand_angaben_energiepass_endenergiebedarf=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].energiepass[0].endenergiebedarf);
-                  var user_zustand_angaben_energiepass_primaerenergietraeger=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].energiepass[0].primaerenergietraeger);
-                  var user_zustand_angaben_energiepass_wertklasse=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].energiepass[0].wertklasse);
-                  var user_zustand_angaben_user_defined_simplefield_epass_baujahr=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben[0].user_defined_simplefield);
-                  var user_zustand_angaben=JSON.stringify(new_arr1.anbieter[0].immobilie[0].zustand_angaben);    
-                  var user_zustand_angaben_arr=JSON.parse(user_zustand_angaben);
+                  var user_zustand_angaben_baujahr=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['baujahr'];
+                  var user_zustand_angaben_energiepass=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['energiepass'];
+                  var user_zustand_angaben_energiepass_gueltig_bis=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['energiepass']['gueltig_bis'];
+                  var user_zustand_angaben_energiepass_endenergiebedarf=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['energiepass']['endenergiebedarf'];
+                  var user_zustand_angaben_energiepass_primaerenergietraeger=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['energiepass']['primaerenergietraeger'];
+                  var user_zustand_angaben_energiepass_wertklasse=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['energiepass']['wertklasse'];
+                  var user_zustand_angaben_user_defined_simplefield_epass_baujahr=jp['openimmo']['anbieter']['immobilie']['zustand_angaben']['user_defined_simplefield'];
+                  var user_zustand_angaben=jp['openimmo']['anbieter']['immobilie']['zustand_angaben'];    
+                  var user_zustand_angaben_arr=user_zustand_angaben;
                   
                   if(typeof user_zustand_angaben_baujahr == "undefined")   
                   {
-                      user_zustand_angaben_arr.baujahr=arr;
+                      user_zustand_angaben_arr['baujahr']=obj_null;
                   }
                   if(typeof user_zustand_angaben_energiepass == "undefined")
                   {
-                      user_zustand_angaben_arr.energiepass=arr;
+                      user_zustand_angaben_arr['energiepass']=obj_null;
                   }
                    if(typeof user_zustand_angaben_energiepass_gueltig_bis == "undefined")
                   {
-                      user_zustand_angaben_arr[0].energiepass.gueltig_bis=arr;
+                      user_zustand_angaben_arr['energiepass']['gueltig_bis']=obj_null;
                   }
                   if(typeof user_zustand_angaben_energiepass_endenergiebedarf == "undefined")
                   {
-                      user_zustand_angaben_arr[0].energiepass.endenergiebedarf=arr;
+                      user_zustand_angaben_arr['energiepass']['endenergiebedarf']=obj_null;
                   }
                    if(typeof user_zustand_angaben_energiepass_primaerenergietraeger == "undefined")
                   {
-                      user_zustand_angaben_arr[0].energiepass.primaerenergietraeger=arr;
+                      user_zustand_angaben_arr['energiepass']['primaerenergietraeger']=obj_null;
                   }
                   if(typeof user_zustand_angaben_energiepass_wertklasse == "undefined")
                   {
-                      user_zustand_angaben_arr[0].energiepass.wertklasse=arr;
-                  }
+                      user_zustand_angaben_arr['energiepass']['wertklasse']=obj_null;
+                  } 
                    if(typeof user_zustand_angaben_user_defined_simplefield_epass_baujahr == "undefined")
                   {
-                      user_zustand_angaben_arr[0].user_defined_simplefield=arr;
+                      user_zustand_angaben_arr['user_defined_simplefield']=obj_null;
                   }
 
                   var objektkategorie=JSON.stringify(user_objektkategorie_arr);
+                  
                   var geo=JSON.stringify(user_geo_arr);
-                  var kontaktperson=JSON.stringify(new_arr1.anbieter[0].immobilie[0].kontaktperson);
+                 
+                  var kontaktperson=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['kontaktperson']).toString();  
+
                   var weitere_adresse=JSON.stringify([]);
-                  var preise=JSON.stringify(new_arr1.anbieter[0].immobilie[0].preise);
+                  var preise=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['preise']).toString();
+
                   var bieterverfahren=null;
-                  var versteigerung={};
-                  var bieterverfahren=JSON.stringify(new_arr1.anbieter[0].immobilie[0].bieterverfahren);
-                  var versteigerung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].versteigerung);
+                  var versteigerung={}; 
+                  var bieterverfahren=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['bieterverfahren']).toString();
+                  var versteigerung=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['versteigerung']).toString();
+
                   var flaechen=JSON.stringify(user_flaechen_arr);
-                  var ausstattung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].ausstattung);
+
+                  var ausstattung=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['ausstattung']).toString();
+
                   var zustand_angaben=JSON.stringify(user_zustand_angaben_arr);
-                  var bewertung=JSON.stringify(new_arr1.anbieter[0].immobilie[0].bewertung);
-                  var infrastruktur=JSON.stringify(new_arr1.anbieter[0].immobilie[0].infrastruktur);
-                  var freitexte=JSON.stringify(user_freitexte_arr[0]);
+
+                  var bewertung=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['bewertung']).toString();
+                  var infrastruktur=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['infrastruktur']).toString();
+                      
+
+                  var pre_freitexte=JSON.stringify(user_freitexte_arr).toString();
+                  var freitexte=pre_freitexte.replace(/\\/g, '&nbsp;'); 
+               
                   var anhaenge=JSON.stringify(user_anhaenge_arr);
-                  var verwaltung_objekt=JSON.stringify(new_arr1.anbieter[0].immobilie[0].verwaltung_objekt);
+
+                  var verwaltung_objekt=JSON.stringify(jp['openimmo']['anbieter']['immobilie']['verwaltung_objekt']).toString();
+
                   var verwaltung_techn=JSON.stringify(user_vertech_value_arr);
+
                   var update_time=new Date();
                   var top_directory=top;
                   var directory=my_dir;
@@ -883,26 +899,26 @@ function db_add_data(new_array,new_array1,new_zip){
                 
                   // anbieters table   
                   
-                  var anbieternr=JSON.stringify(new_arr1.anbieter[0].anbieternr.toString());
-                  var firma=JSON.stringify(new_arr1.anbieter[0].firma.toString());
-                  var openimmo_anid=JSON.stringify(new_arr1.anbieter[0].openimmo_anid.toString());
-                  var lizenzkennung=JSON.stringify(new_arr1.anbieter[0].toString());
-                  var anhang=JSON.stringify("NULL");
-                  var impressum=JSON.stringify("NULL");
-                  var impressum_strukt=JSON.stringify("NULL");
+                  var anbieternr=jp['openimmo']['anbieter']['anbieternr'];
+                  var firma=jp['openimmo']['anbieter']['firma'];
+                  var openimmo_anid=jp['openimmo']['anbieter']['openimmo_anid'];
+                  var lizenzkennung="NULL";
+                  var anhang="NULL";
+                  var impressum="NULL";
+                  var impressum_strukt="NULL";
                   
                  
                   // openimmos table
-
-                  var art=JSON.stringify(new_arr1.uebertragung[0].ATTR.art.toString());
-                  var umfang=JSON.stringify(new_arr1.uebertragung[0].ATTR.umfang.toString());
-                  var modus=JSON.stringify(new_arr1.uebertragung[0].ATTR.modus.toString());
-                  var version=JSON.stringify(new_arr1.uebertragung[0].ATTR.version.toString());
-                  var sendersoftware=JSON.stringify(new_arr1.uebertragung[0].ATTR.sendersoftware.toString());
-                  var senderversion=JSON.stringify(new_arr1.uebertragung[0].ATTR.senderversion.toString());
-                  var techn_email=JSON.stringify(new_arr1.uebertragung[0].ATTR.techn_email.toString());
-                  var regi_id=JSON.stringify("NULL");
-                  var timestamp=JSON.stringify(new_arr1.uebertragung[0].ATTR.timestamp.toString());
+  
+                  var art=jp['openimmo']['uebertragung']['art'];          
+                  var umfang=jp['openimmo']['uebertragung']['umfang'];
+                  var modus=jp['openimmo']['uebertragung']['modus'];
+                  var version=jp['openimmo']['uebertragung']['version'];
+                  var sendersoftware=jp['openimmo']['uebertragung']['sendersoftware'];
+                  var senderversion=jp['openimmo']['uebertragung']['senderversion'];
+                  var techn_email=jp['openimmo']['uebertragung']['techn_email']; 
+                  var regi_id="NULL";
+                  var timestamp=jp['openimmo']['uebertragung']['timestamp'];
 
                   var d=timestamp.split('T')[0];
                   var t=timestamp.match(/\d\d:\d\d:\d\d/)[0];
@@ -918,7 +934,7 @@ function db_add_data(new_array,new_array1,new_zip){
                    
                   dbConn.query("INSERT INTO immobilies(openimmo_obid,objektkategorie,geo,kontaktperson,weitere_adresse,preise,bieterverfahren,versteigerung,flaechen,ausstattung,zustand_angaben,bewertung,infrastruktur,freitexte,anhaenge,verwaltung_objekt,verwaltung_techn,user_defined_simplefield,user_defined_anyfield,user_defined_extend,update_time,top_directory,directory,created_at,updated_at)VALUES('"+openimmo_obid+"','"+ objektkategorie +"','"+geo+"','"+kontaktperson+"','"+weitere_adresse+"','"+preise+"','"+bieterverfahren+"','"+versteigerung+"','"+flaechen+"','"+ausstattung+"','"+zustand_angaben+"','"+bewertung+"','"+infrastruktur+"','"+freitexte+"','"+anhaenge+"','"+verwaltung_objekt+"','"+verwaltung_techn+"','"+user_defined_simplefield+"','"+user_defined_anyfield+"','"+user_defined_extend+"','"+created_at+"','"+top_directory+"','"+directory+"','"+created_at+"','"+created_at+"')",(err,res)=>{
                       if(err) 
-                        console.log(err);  
+                        console.log(err);   
                       else
                         var immobilie_id=res.insertId;
                     dbConn.query("INSERT INTO anbieters(immobilie_id,anbieternr,firma,openimmo_anid,lizenzkennung,anhang,impressum,impressum_strukt,user_defined_anyfield,user_defined_simplefield,created_at,updated_at)VALUES('"+immobilie_id+"','"+anbieternr+"','"+firma+"','"+openimmo_anid+"','"+lizenzkennung+"','"+anhang+"','"+impressum+"','"+impressum_strukt+"','"+user_defined_anyfield+"','"+user_defined_simplefield+"','"+created_at+"','"+created_at+"')",(err,res1)=>{
@@ -943,6 +959,7 @@ function db_add_data(new_array,new_array1,new_zip){
       });
    });
 }
+
 
 //Add Property into db which is not available in db end 
 
@@ -979,7 +996,7 @@ function checkFileExist(files){
 // Check and Get New Zip which is available in db end
 
 // Hiteshree Custom method to display Import Api End
-
+ 
 //Toggle Publish property
 Immobilie.togglepublish = function(id){
   var date = new Date();
@@ -1035,110 +1052,93 @@ Immobilie.togglepublish = function(id){
 
 Immobilie.SingleimportProperty = function (myfile,result) {
 
+
   var rootfolders = readFolder('openimmo/');
-  var files = [];     //Store All Files 
+  var files = [];     //Store All Files
   var exist_zip =[];  //Store Exists Zip names
   var new_zip =[];    //Store New zip names
-  var new_array =[];
-  var new_array1 =[];        
-  var res1;           
+  var xml_array =[];   //Store XML file list
+  var xml_readdata =[]; //Store Result of XML to xml_readdata array
+  var openimmo_obid_arr=[]; //Store openimmo_obid(read from xml file)
+  var res1;
 
   files.push(myfile);
   
 
-   var ress,makesubfolders;
-      ress= checkFileExist(files);    // Check and get  Zip File already exists in db or not
-      ress.then((data)=>{             // Return result of zip which is availale in db
-        exist_zip=data;               // Add already available zip to exist_zip array
-        var myarr=files;
-        var d;
-     
-        for (var i = 0; i < myarr.length; i++) {
-          var f=false;
-          var val=myarr[i];                                       
-          for (var j = 0; j < exist_zip.length; j++) {
-              if(val == exist_zip[j].filename){             //Compare files of both array
-                f=true;
-                break;
+  var ress,makesubfolders;
+          ress= checkFileExist(files);    // Check and get  Zip File already exists in db or not
+          ress.then((data)=>{             // Return result of zip which is availale in db
+            exist_zip=data;               // Add already available zip to exist_zip array
+            var myarr=files;
+            var d; 
+         
+            for (var i = 0; i < myarr.length; i++) {
+              var f=false;
+              var val=myarr[i];                                       
+              for (var j = 0; j < exist_zip.length; j++) {
+                  if(val == exist_zip[j].filename){             //Compare files of both array
+                    f=true;
+                    break;
+                }
+              }
+
+              if(f==false){
+                new_zip.push(val);       //Push Zip names to new_zip which is not available in db
+              }
             }
+          
+            if(new_zip.length>0){       //If new_zip contains any one zip(>0)
+
+                 var add_arr=[],del_arr=[];   //Add and Del Array to Store property which are to be added and deleted
+                 
+                 var make_zipfolders_xmlfiles=  make_zipfolder_xmlfile(rootfolders,new_zip);  //make zip folders and extract zip files
+                
+                 make_zipfolders_xmlfiles.then((data)=>{       
+            
+                      xml_array=data;                 //If result returns store data to xml_array 
+
+                      setTimeout(()=>{                //Set time that executes read_xml and other code after specified time of extraction completion 
+
+                          var readxml= read_xml(xml_array);   //To Read Xml Data
+                          
+                          readxml.then((data)=>{
+                              xml_readdata=data;            //Store result of XML to xml_readdata array
+                              
+                              xml_readdata.forEach(xmlread_arr=>{
+                                 
+                                  const jp = JSON.parse(xmlread_arr);  
+                                  var openimmo_obid=jp['openimmo']['anbieter']['immobilie']['verwaltung_techn']['openimmo_obid'];
+
+                                  openimmo_obid_arr.push(openimmo_obid);    //push main openimmo into one array  
+                              }); 
+
+                              var check_openimmo_obid= db_check_openimmo_obid(openimmo_obid_arr);  //check openimmo_obid available in db or not
+ 
+                              check_openimmo_obid.then((data)=>{        //If openimmo_obid is there then add and delete data
+                    
+                                  var delete_data = db_delete_data(data['del_arr']);    //To Delete data from db
+
+                                  var add_data = db_add_data(xml_array,xml_readdata,new_zip);   //To add data into db
+                                  
+                                  var final_object={
+                                      "exists_file":exist_zip,
+                                      "database_updated_file":new_zip
+                                  }                                   //Return FinalObject that shows list of exists file and updated file(Add & delete)
+
+                                  result(null,final_object);  
+                              });
+                          }); 
+                      },1000);
+                });
+            }
+            else
+            {
+          
+                var ext={
+                    "exist_zip":exist_zip
+                }                         //Returns only exists zip if noy added any newly zip
+                result(null,ext);
           }
-
-          if(f==false){
-            new_zip.push(val);       //Push Zip names to new_zip which is not available in db
-          }
-        }
-
-        if(new_zip.length>0){       //If new_zip contains any one zip(>0)
-
-             var add_arr=[],del_arr=[];   //Add and Del Array to Store propery which are to be added and deleted
-             console.log("309",new_zip);
-             var make_zipfolders_xmlfiles=  make_zipfolder_xmlfile(rootfolders,new_zip);  //make zip folders and extract zip files
-                   
-             make_zipfolders_xmlfiles.then((data)=>{ 
-        
-                  new_array=data;                 //If result returns store data to new_array
-
-                  setTimeout(()=>{                //Set time that executes read_xml and other code after specified time of extraction completion 
-
-                      var readxml= read_xml(new_array);   //To Read Xml Data
-                      // console.log("323",readxml);
-                      if(readxml.flag==0){
-                        result(null,readxml.error);    
-                      }
-                      else 
-                      {  
-                          readxml.then((data)=>{           
-                              new_array1=data;            //Store result of XML to new_array1
-
-                              var check_openimmo_obid= db_check_openimmo_obid(new_array1);  //check openimmo_obid available in db or not
-
-                              if(check_openimmo_obid.flag==0){
-                                result(null,check_openimmo_obid.error);
-                              }
-                              else    
-                              {
-                                  check_openimmo_obid.then((data)=>{        //If openimmo_obid is there then add and delete data 
-                        
-                                      var delete_data = db_delete_data(data['del_arr']);    //To Delete data from db
-
-                                      if(delete_data.flag==0){
-                                          result(null,delete_data.error)
-                                      }
-                                      else
-                                      {      
-                                        
-                                        var add_data = db_add_data(new_array,new_array1,new_zip);   //To add data into db
-
-                                        if(add_data.flag==0){
-                                          result(null,add_data.error);
-                                        }
-                                        else
-                                        {
-                                          var final_object={
-                                              "exists_file":exist_zip,
-                                              "database_updated_file":new_zip
-                                          }   
-                                           result(null,final_object);  //Return FinalObject that shows list of exists file and updated file(Add & delete)                                          
-                                        }
-
-                                      }
-                                        
-                                  });
-                              }
-                        }); 
-                      } 
-                  },1000);
-
-            });
-        }
-        else
-        { 
-      
-            var ext={
-                "exist_zip":exist_zip
-            }                         //Returns only exists zip if noy added any newly zip
-            result(null,ext);
-        }
       });
  }
 
@@ -1149,7 +1149,7 @@ Immobilie.SingleimportProperty = function (myfile,result) {
 
 Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,types_of_region,center,lat,lon,object_id,types_of_object,radius,per_page,page,result){
   
-  let sql="select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where";
+  let sql="select immobilies.* from `immobilies` where";
   
   if(!types_of_use)     
     types_of_use =0;   
@@ -1218,12 +1218,12 @@ Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,
         }
         
         if(!per_page && !page){
-              sql=sql+"and `immobilies`.`deleted_at` is null order by `created_at` desc";  
+              sql=sql+"and `immobilies`.`deleted_at` is null order by `id` desc";  
         }
         else
         {
               var offset = (per_page * (page - 1));
-              sql=sql+"and `immobilies`.`deleted_at` is null order by `created_at` desc  limit "+per_page+" offset "+offset+"";
+              sql=sql+"and `immobilies`.`deleted_at` is null order by `id` desc  limit "+per_page+" offset "+offset+"";
         }
         dbConn.query(sql,function(err,res){
           if(res)
@@ -1240,12 +1240,12 @@ Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,
   { 
     if(object_id!=null){
       if(!per_page && !page){
-          var sql_object="select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `created_at` desc";
+          var sql_object="select immobilies.* from `immobilies` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `id` desc";
         }
         else
         {
           var offset = (per_page * (page - 1));
-          var sql_object="select immobilies.*, headers.logo from `immobilies` left join `headers` on `headers`.`provider_id` =`immobilies`.`top_directory` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `created_at` desc  limit "+per_page+" offset "+offset+"";
+          var sql_object="select immobilies.*  from `immobilies` where `openimmo_obid` like '%" +object_id+ "%' and(`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and `immobilies`.`deleted_at` is null order by `id` desc  limit "+per_page+" offset "+offset+"";
         }
       dbConn.query(sql_object,function(err,res){
           if(res)
@@ -1269,5 +1269,60 @@ Immobilie.searchProperty = function(types_of_use,surface_min,price_max,room_min,
 }
 
 // search property end
+
+// Custom method to display all offen property start
+
+Immobilie.getAllOffenProperty = function(per_page,page,id,result){
+
+
+  let pid;
+  let obj_tmp,obj_tmp1,obj_tmp2;
+  let i;
+    if(id < 10){
+      pid = '0000'+id;
+    } 
+
+    else if(id< 100){
+       pid = '000'+id;  
+    }
+
+    else if(id < 1000){
+       pid = '00'+id;
+    } 
+
+    else if(id < 10000){
+       pid = '0'+id;
+    } 
+
+      if(pid == "00004")
+      { 
+              var offset = (per_page * (page - 1));
+              dbConn.query('SELECT *,`i`.`id` AS imm_id,`a`.`id` AS anb_id,`a`.`user_defined_anyfield` AS anb_user_defined_anyfield,`a`.`user_defined_simplefield` AS anb_user_defined_simplefield,`a`.`created_at` AS anb_created_at,`a`.`updated_at` AS anb_updated_at,`a`.`deleted_at` AS anb_deleted_at FROM immobilies i  left join anbieters a on a.immobilie_id = i.id where (a.anbieternr = ' + pid + ') and i.deleted_at is null order by i.id desc  limit '+per_page+' offset '+offset,async function (err,res){
+              if(err){
+                result(null,err); 
+              } 
+              else
+              {  
+                  result(null,res);  
+              }
+           });
+      }         
+      else  
+      {
+        var offset = (per_page * (page - 1));
+        var sql="select *,`immobilies`.`id` AS imm_id,`anbieters`.`id` AS anb_id,`anbieters`.`user_defined_anyfield` AS anb_user_defined_anyfield,`anbieters`.`user_defined_simplefield` AS anb_user_defined_simplefield,`anbieters`.`created_at` AS anb_created_at,`anbieters`.`updated_at` AS anb_updated_at,`anbieters`.`deleted_at` AS anb_deleted_at from `immobilies`  left join `anbieters`  on `anbieters`.`immobilie_id` = `immobilies`.`id` where (`zustand_angaben` like '%VERKAUFT%' or `zustand_angaben` like '%OFFEN%') and (`anbieters`.`openimmo_anid` = "+pid+") and `immobilies`.`deleted_at` is null order by  `immobilies`.`id` desc limit "+per_page+" offset "+offset;
+          dbConn.query(sql,(err,res1)=>{
+              if(err){
+                result(null,err); 
+              } 
+              else
+              {
+                result(null,res1); 
+              }
+              
+          }); 
+      }
+}
+// Custom method to display all offen property end
 
 module.exports = Immobilie;

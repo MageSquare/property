@@ -52,7 +52,7 @@ const upload = multer({ storage: storage }).single("demo_zip");
           }
           else
           {  
-                res.status(200).send(immobilie);
+                res.status(200).json(immobilie);
           }
       });
   });
@@ -453,5 +453,6 @@ propertyRoutes.route('/properties-search').get(function(req,res){
 
   });
 // Delete created evalution
+
 
 module.exports = propertyRoutes;
