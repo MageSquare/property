@@ -56,18 +56,7 @@ function logRequest(req,res,next){
 
     let statusCode;
     let statusMessage;
-    let month_format;
-   
-    let date=new Date().getDate();
-    let month=new Date().getMonth()+1;
-    if(month<10){
-      month_format = '0'+month;
-    }else{
-      month_format = month;
-    }
-    let year=new Date().getFullYear();
-
-    let today_date= year + '-' + month_format + '-' + date;
+ 
     var geo = geoip.lookup(req.ip);
     var ua = req.headers['user-agent'];
 
@@ -102,6 +91,18 @@ function logRequest(req,res,next){
     let logged_details = new Object();
 
     res.on('close', () => {
+
+          let ip_add=req.ip;
+          template = /^::(ffff)?:(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/
+          has_ipv4_version = template.test(ip_add);
+
+          let final_ip;
+          if(has_ipv4_version == true){
+              final_ip = ip_add.replace(/^.*:/, '');
+          }
+          else{
+              final_ip=ip_add;
+          }
           
           statusCode = res.statusCode;
           statusMessage = res.statusMessage;
@@ -115,7 +116,7 @@ function logRequest(req,res,next){
             logged_details['statusCode'] = null; 
           }
 
-          logged_details['logged_ip'] = JSON.stringify(req.ip);
+          logged_details['logged_ip'] = JSON.stringify(final_ip);
           logged_details['api_path'] = JSON.stringify(req.originalUrl);
 
           if(req.headers["accept-language"]!=null){
@@ -141,7 +142,7 @@ function logRequest(req,res,next){
             logged_details['ll'] = null;
           }
 
-          logged_details['date'] = JSON.stringify(today_date);
+          logged_details['date'] = JSON.stringify(new Date('Y-m-d H:i:s'));
           logged_details['device'] = JSON.stringify(device); 
 
           let device_data = JSON.stringify(logged_details.device);
